@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "pattern": "ignored error: Infinite glue shrinkage found in box being split",
+      "reason": "longtable page-split glue warning in the ingestion/storage/practitioner-topics tables; cosmetic, no visible defect. Pre-existing content debt, tracked in report-kit TODOS.md P1.",
+      "expires": "2026-12-31"
+    },
+    {
+      "pattern": "Overfull \\\\hbox \\(6\\.40097pt too wide\\) in paragraph at lines 469--474",
+      "reason": "long inline \\rkcode path literal (s3://crypto-lake/quarantine/trades/{event_date}) in the quality-reliability chapter overflows the line by 6.4pt. Cosmetic; fix by shortening the path or breaking it across lines.",
+      "expires": "2026-12-31"
+    }
+  ]
+}

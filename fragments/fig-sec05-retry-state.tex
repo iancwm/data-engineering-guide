@@ -9,15 +9,15 @@
 \begin{reportstate}[step spacing=3.2]
   \state{scheduled}{Scheduled}
   \state{running}{Running}
-  \state{retrying}{Retrying}
   \terminalstate{succeeded}{Succeeded}
-  \RKNode[rk terminal] {failed}{3.2}{-2.1}{Failed}
-  \RKNode[rk terminal] {skipped}{8.5}{-2.1}{Skipped}
+  \stateat{retrying}{4.8}{2.1}{Retrying}
+  \terminalstateat{failed}{3.2}{-2.1}{Failed}
+  \terminalstateat{skipped}{8.5}{-2.1}{Skipped}
   \transition{scheduled}{running}{}
-  \transition{running}{retrying}{}
-  \transition{retrying}{running}{}
   \transition{running}{succeeded}{}
-  \RKEdge{flow}{running}{failed}
-  \RKEdge{flow}{running}{skipped}
+  \transition[route={bend left=15}]{running.north}{retrying.south}{retry}
+  \transition[route={bend right=15}]{retrying.south}{running.north}{}
+  \transition[route={bend right=12},label-position=below]{running}{failed}{deterministic error}
+  \transition[route={bend right=12},label-position=below]{running}{skipped}{skip}
 \end{reportstate}
 \end{diagram}

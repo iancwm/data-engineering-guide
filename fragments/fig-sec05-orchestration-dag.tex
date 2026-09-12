@@ -8,13 +8,13 @@
 ]
 % The main data path is horizontal; the lower branch names the blocked
 % downstream outcome after a deterministic validation failure.
-\RKNode[text width=22mm,align=center]{extract}{0}{0}{Extract}
-\RKNode[text width=22mm,align=center]{load}{3.15}{0}{Load}
-\RKNode[text width=22mm,align=center]{validate}{6.30}{0}{Validate}
-\RKNode[text width=22mm,align=center]{transform}{9.45}{0}{Transform}
-\RKNode[text width=22mm,align=center]{publish}{12.60}{0}{Publish}
-\RKNode[rk terminal,text width=22mm,align=center]{failed}{6.30}{-2.15}{Failed or quarantined}
-\RKNode[rk terminal,text width=22mm,align=center]{blocked}{9.45}{-2.15}{Blocked downstream}
+\stepat[text width=22mm,align=center]{extract}{0}{0}{Extract}
+\stepat[text width=22mm,align=center]{load}{3.15}{0}{Load}
+\stepat[text width=22mm,align=center]{validate}{6.30}{0}{Validate}
+\stepat[text width=22mm,align=center]{transform}{9.45}{0}{Transform}
+\stepat[text width=22mm,align=center]{publish}{12.60}{0}{Publish}
+\stepat[rk terminal,text width=22mm,align=center]{failed}{6.30}{-2.15}{Failed or quarantined}
+\stepat[rk terminal,text width=22mm,align=center]{blocked}{12.60}{-2.15}{Blocked downstream}
 \flowedge{extract}{load}
 \flowedge{load}{validate}
 \flowedge{validate}{transform}

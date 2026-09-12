@@ -5,7 +5,11 @@
   source={Author's synthesis.},
   description={Eight ordered capability layers run from source systems and ingestion transport through storage and table semantics, processing, orchestration, quality and observability, governance, and serving. A vendor-span annotation says that one product may implement several layers while ownership, security, cost, and exit planning remain explicit. Representative artifacts are shown without prescribing vendors.}
 ]
-\begin{reportarchitecture}[width=15.2]
+\begin{reportarchitecture}[
+  width=15.2,
+  annotation={Vendor span: one product may implement several layers; ownership, security, cost, and exit planning still remain explicit.},
+  annotation-position=top
+]
   \layer{Source}{events, APIs, databases}
   \layer{Transport}{producer, broker, raw landing}
   \layer{Storage and tables}{Parquet, table format, catalog}
@@ -15,9 +19,4 @@
   \layer{Governance}{owner, contract, access policy}
   \layer{Serving}{dashboard, feature, application}
 \end{reportarchitecture}
-\node[draw=LinkBlue,fill=LinkBlue!5,rounded corners=1pt,align=center,
-  text width=12.8cm,font=\sffamily\fontsize{7.2}{8.5}\selectfont,
-  inner sep=4pt] at (7.6,1.15)
-  {Vendor span: one product may implement several layers; ownership, security,
-  cost, and exit planning still remain explicit.};
 \end{diagram}

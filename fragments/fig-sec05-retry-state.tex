@@ -1,0 +1,23 @@
+\begin{diagram}[
+  type=state,
+  width=\textwidth,
+  label={fig:sec05-retry-state},
+  caption={A bounded orchestration recovery state machine separates transient retry from terminal failure: a validation error stops publication instead of consuming retries indefinitely.},
+  source={Author's synthesis.},
+  description={A state machine moves from Scheduled to Running to Retrying and back to Running for transient failures, then to Succeeded after a successful attempt. Running can instead reach Failed for a deterministic or exhausted error, and an optional branch can be Skipped. Downstream publication is blocked after Failed.}
+]
+\begin{reportstate}[step spacing=3.2]
+  \state{scheduled}{Scheduled}
+  \state{running}{Running}
+  \state{retrying}{Retrying}
+  \terminalstate{succeeded}{Succeeded}
+  \RKNode[rk terminal] {failed}{3.2}{-2.1}{Failed}
+  \RKNode[rk terminal] {skipped}{8.5}{-2.1}{Skipped}
+  \transition{scheduled}{running}{}
+  \transition{running}{retrying}{}
+  \transition{retrying}{running}{}
+  \transition{running}{succeeded}{}
+  \RKEdge{flow}{running}{failed}
+  \RKEdge{flow}{running}{skipped}
+\end{reportstate}
+\end{diagram}

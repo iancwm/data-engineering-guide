@@ -1,0 +1,20 @@
+\begin{diagram}[
+  type=swimlane,
+  width=\textwidth,
+  label={fig:sec06-capstone-milestones},
+  caption={The capstone grows through four handoffs: durable ingestion, retry-safe storage, grain-declared models, and operational trust controls that gate publication.},
+  source={Author's synthesis.},
+  description={Four horizontal milestone lanes show Ingest producing raw trades and a manifest, Store producing curated trades and a catalog, Model producing staging, trade facts, and hourly OHLCV, and Operationalize trust producing tests, reconciliation evidence, quarantine records, ownership, and a runbook. Each lane ends with a handoff condition before the next lane begins.}
+]
+\begin{reportswimlane}[lanes={Ingest,Store,Model,Operationalize trust},lane spacing=1.5,width=12.2]
+  \lanestep{ingest-input}{Ingest}{BTCUSDT stream}{1}
+  \lanestep{raw-output}{Ingest}{raw trades and manifest}{2}
+  \lanestep{curated-output}{Store}{curated trades and catalog}{3}
+  \lanestep{model-output}{Model}{staging and trade facts}{4}
+  \lanestep{trust-output}{Operationalize trust}{OHLCV, tests, quarantine}{5}
+  \laneflow{ingest-input}{raw-output}
+  \handoff{raw-output}{curated-output}
+  \handoff{curated-output}{model-output}
+  \handoff{model-output}{trust-output}
+\end{reportswimlane}
+\end{diagram}

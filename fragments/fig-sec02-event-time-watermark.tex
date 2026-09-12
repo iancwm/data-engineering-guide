@@ -1,0 +1,17 @@
+\begin{diagram}[
+  type=timeline,
+  label={fig:sec02-event-time-watermark},
+  caption={Event time and arrival time can disagree: the watermark advances a UTC hour while a late trade still arrives inside the allowed-lateness window and can revise the aggregate.},
+  source={Author's synthesis.},
+  description={Three aligned tracks show a trade's event-time clock, its arrival-time clock, and a watermark. A trade for 02:14 arrives at 03:03 after the 02:00 to 03:00 window has mostly progressed, but before the allowed-lateness boundary closes it. The window is then finalized and later events go to reconciliation.}
+]
+\begin{reporttimeline}[tracks={Event time,Arrival time,Watermark},span=12.0,track gap=1.65]
+  \event{Event time}{0.12}{02:14 trade}
+  \event{Event time}{0.55}{03:02 trade}
+  \event{Arrival time}{0.60}{03:03 late}
+  \event{Arrival time}{0.88}{03:08 on time}
+  \event{Watermark}{0.70}{02:59}
+  \event[draw=LinkBlue,fill=white]{Watermark}{0.95}{close 02:00}
+  \skewarrow{Event time}{0.12}{Arrival time}{0.60}
+\end{reporttimeline}
+\end{diagram}

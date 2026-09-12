@@ -171,27 +171,95 @@ One possible implementation:
 4. Add OHLCV tests: high price should be greater than or equal to low, open, and close prices.
 5. Add freshness checks for the distinct clocks: compare the latest manifest or table `landed_at` with the expected pipeline schedule, measure the gap between `ingested_at` and `event_timestamp` as source delay, and compare `event_timestamp` with a source heartbeat or an active-source expectation. A quiet exchange is not automatically an ingestion failure.
 6. Add volume checks: compare current finalized UTC-hour trade counts with a documented historical baseline, allowing for market-activity changes and the initial warm-up period.
+
+The reconciliation flow keeps counts comparable by naming the interval and
+grain at every boundary. Duplicate delivery attempts are evidence of an
+at-least-once path; they are not silently treated as distinct trades.
+
+[[REPORTKIT-VISUAL:fig:sec06-reconciliation-flow]]
+
 7. Add reconciliation checks for each closed event-time interval. Verify that accepted raw attempts plus quarantined records explain all received records; count duplicate accepted attempts separately; then verify that the distinct trade-key count in `stg_trades` agrees with `fct_trades`, and that the sum of `trade_count` in finalized hourly aggregates agrees with the fact table for the same interval.
-8. Quarantine malformed records under a path such as `s3://crypto-lake/quarantine/trades/{event_date}/{event_hour}/...`, retaining the raw payload, `ingested_at`, and an actionable error code instead of silently dropping records.
+8. Quarantine malformed records under a path such as
+   `quarantine/trades/{event_date}/{event_hour}/...`, retaining the raw
+   payload, `ingested_at`, and an actionable error code instead of silently
+   dropping records.
 9. Document owners, expected refresh times, the allowed-lateness and lookback policies, and failure response steps.
 10. Publish or expose the curated models only after blocking checks pass; route warning-level anomalies to owners with enough context for investigation.
 
 Avoid hardcoded thresholds without thought. A rule such as `price < 100000` may be sensible today and wrong later. Prefer thresholds tied to domain logic, source specifications, or historical distributions, with room for legitimate regime changes.
 
+**Runnable with adaptation.** These dbt checks protect the model's grain and
+basic business rules. A composite-key test macro or a concatenated surrogate
+test key is still needed for the three-column logical key; reconciliation and
+freshness belong in additional project-specific checks.
+
+Listing: Core dbt tests for trade models. \label{lst:sec06-dbt-tests}
+
+```yaml
+version: 2
+
+models:
+  - name: stg_trades
+    description: One row per unique exchange trade.
+    columns:
+      - name: exchange_name
+        tests: [not_null]
+      - name: asset_symbol
+        tests: [not_null]
+      - name: source_trade_id
+        tests: [not_null]
+      - name: event_timestamp
+        tests: [not_null]
+      - name: price
+        tests:
+          - not_null
+          - expression_is_true:
+              expression: "> 0"
+      - name: quantity
+        tests:
+          - not_null
+          - expression_is_true:
+              expression: "> 0"
+    tests:
+      - unique_combination_of_columns:
+          combination_of_columns:
+            - exchange_name
+            - asset_symbol
+            - source_trade_id
+
+  - name: fct_hourly_ohlcv
+    columns:
+      - name: hour_start_utc
+        tests: [not_null]
+      - name: high_price
+        tests:
+          - not_null
+          - expression_is_true:
+              expression: ">= low_price"
+      - name: trade_count
+        tests:
+          - not_null
+          - expression_is_true:
+              expression: "> 0"
+```
+
+The test names are illustrative because dbt packages and custom macros differ.
+The important boundary is that a failing blocking test prevents publication and
+retains enough run metadata to explain the affected interval.
+
 ## Capstone Milestone Map
 
-The capstone milestone table uses three columns so each handoff remains readable: the middle column combines the inputs and outputs that define the milestone's boundary.
+The milestone view is a swimlane because each stage has both a data boundary
+and a control condition. It makes the handoff visible without repeating a dense
+table of long prose cells.
 
-Table: Capstone milestones, data boundaries, and handoff conditions. \label{tbl:capstone-milestones}
-
-| Milestone | Data boundary | Handoff condition |
-| --- | --- | --- |
-| Ingest | Consumes Binance Spot `BTCUSDT` events; produces raw payloads, a normalized envelope, UTC timestamps, a manifest, and a replay path | Files and manifest are durable; offsets are committed only after successful writes |
-| Store | Consumes the Section 2 raw landing and manifest; produces `curated_trades` with one row per unique trade key, documented schema, and location | Curated writes are retry-safe; late events can update the correct event-time partition |
-| Model | Consumes `curated_trades`; produces `stg_trades`, `fct_trades`, and `fct_hourly_ohlcv` with declared grains | Incremental lookback and aggregate finalization rules are documented |
-| Operationalize trust | Consumes raw and modeled outputs; produces test results, freshness and volume signals, reconciliation evidence, quarantine records, ownership, and a runbook | Blocking failures prevent publication; warnings and incidents reach the responsible owner |
+[[REPORTKIT-VISUAL:fig:sec06-capstone-milestones]]
 
 The completed capstone is therefore more than a set of tables. It is a reproducible path from a source event to a documented analytical result, with enough evidence to explain what arrived, what was accepted, what was delayed or quarantined, and which outputs consumers can trust.
+
+**Common beginner mistakes.** Running tests only after publication, comparing
+counts at incompatible grains, alerting without an owner, and silently
+discarding quarantined records all turn quality checks into theatre.
 
 ## Quality and Reliability Checklist
 

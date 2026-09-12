@@ -1,15 +1,28 @@
 \begin{diagram}[
-  type=architecture,
+  type=swimlane,
+  width=\textwidth,
   label={fig:sec09-capstone-architecture},
-  caption={The capstone architecture connects a public source to a durable, tested, and scheduled serving path.},
+  caption={The cumulative capstone architecture connects a public market stream to named durable assets, model grains, quality and replay controls, and consumer contracts.},
   source={Author's synthesis.},
-  description={Five ordered layers show a public API or stream, raw landing and manifest ingestion, a curated lakehouse table and catalog, quality tests with scheduling and replay, and downstream dashboard or report consumers.}
+  description={Four lanes distinguish the data path, control path, trust boundary, and consumers. Data flows from a public BTCUSDT stream through a producer and broker to raw trades and a manifest, curated trades, and hourly OHLCV. Scheduling and replay control the run; tests and quarantine control publication; a contract and owner support dashboard, model, and report consumers.}
 ]
-\begin{reportarchitecture}
-  \layer{Source}{Public API or stream}
-  \layer{Ingestion}{Raw landing, Manifest}
-  \layer{Lakehouse}{Curated table, Catalog}
-  \layer{Quality and orchestration}{Tests, Schedule, Replay}
-  \layer{Serving}{Dashboard, Report}
-\end{reportarchitecture}
+\begin{reportswimlane}[lanes={Data path,Control path,Trust boundary,Consumers},lane spacing=1.45,width=12.2]
+  \lanestep{source}{Data path}{BTCUSDT stream}{1}
+  \lanestep{raw}{Data path}{producer and broker}{2}
+  \lanestep{curated}{Data path}{curated trades}{3}
+  \lanestep{hourly}{Data path}{hourly OHLCV}{4}
+  \lanestep{serve}{Consumers}{dashboard model report}{5}
+  \lanestep{schedule}{Control path}{schedule retry replay}{2}
+  \lanestep{publish}{Control path}{backfill interval publish}{4}
+  \lanestep{quality}{Trust boundary}{tests freshness alerts}{3}
+  \lanestep{quarantine}{Trust boundary}{quarantine runbook}{4}
+  \lanestep{contract}{Trust boundary}{contract owner promise}{5}
+  \laneflow{source}{raw}
+  \laneflow{raw}{curated}
+  \laneflow{curated}{hourly}
+  \laneflow{hourly}{serve}
+  \handoff{schedule}{publish}
+  \handoff{quality}{quarantine}
+  \handoff{quality}{contract}
+\end{reportswimlane}
 \end{diagram}

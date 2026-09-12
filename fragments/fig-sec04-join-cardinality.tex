@@ -1,0 +1,22 @@
+\begin{diagram}[
+  type=compare,
+  width=\textwidth,
+  label={fig:sec04-join-cardinality},
+  caption={A one-row-per-trade model can multiply rows when a reference join is not unique; deduplicating or pre-aggregating the reference side preserves the intended output grain.},
+  source={Author's synthesis.},
+  description={A before-and-after comparison. One trade row joins to three reference rows with the same key, producing three output rows and an inflated quantity. After pre-aggregation or deduplication, the trade joins to one reference row and the output returns to one row per trade.}
+]
+\begin{reportcompare}[panel width=5.1,gap=2.25]
+  \panel{wrong}{Wrong grain: many matches}
+  \panel{right}{Corrected grain}
+  \panelitem{wrong}{0}{trade T-42: 1 row}
+  \panelitem{wrong}{1}{reference key: 3 rows}
+  \panelitem{wrong}{2}{join output: 3 rows}
+  \panelitem{wrong}{3}{quantity multiplied}
+  \panelitem{right}{0}{trade T-42: 1 row}
+  \panelitem{right}{1}{reference key: 1 row}
+  \panelitem{right}{2}{join output: 1 row}
+  \panelitem{right}{3}{quantity preserved}
+  \transformarrow{deduplicate or\\pre-aggregate}
+\end{reportcompare}
+\end{diagram}

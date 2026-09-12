@@ -74,21 +74,35 @@ This table is deliberately broad. In a small project, one Python script and a Po
 
 ## Common Confusions
 
-The lifecycle stages are related, but they are not interchangeable. The common-confusions table below provides useful checkpoints while reading the rest of the guide.
+The lifecycle stages are related, but they are not interchangeable. Keep these
+distinctions in mind while reading the rest of the guide:
 
-Table: Common confusions about data-engineering concepts. \label{tbl:common-confusions}
-
-| Question | Short answer |
-| --- | --- |
-| Do I need Kafka for every pipeline? | No. A scheduled API pull into Parquet or a warehouse is often enough. Use Kafka, Redpanda, Kinesis, or Pub/Sub when low latency, replay, fan-out, or buffering between independent producers and consumers justifies the added operational cost. |
-| What is the difference between a warehouse, a lake, and a lakehouse? | A warehouse is a managed analytical system, usually optimized for SQL. A lake stores files, often cheaply and in open formats, on object storage. A lakehouse adds table management, transactions, and schema controls to lake storage. The choice depends on workload, governance, cost, and operational capability. |
-| Are ETL and ELT competing technologies? | They describe where transformation happens relative to loading. ETL transforms before loading; ELT loads first and transforms in the destination. Neither is universally correct: source sensitivity, compute location, latency, and reuse determine the choice. |
-| Is processing the same as transformation? | Processing is the computation that runs over data; transformation is the logic that changes its meaning, shape, or values. A warehouse, Spark, or Flink job provides processing, while SQL, Python, or dbt expresses transformations. One platform can do both. |
-| How are data quality and observability different? | Quality checks the data product, such as valid values, complete partitions, and unique keys. Observability checks the behavior of the system, such as runtime, resource use, throughput, and failures. They support one another but answer different questions. |
-| How are orchestration and transformation different? | Transformation defines how data is cleaned or modeled. Orchestration decides when work runs, what it depends on, how it retries, and how it is backfilled. A tool such as dbt may define transformations, while Airflow, Dagster, or a cloud scheduler coordinates execution. |
-| What does "one row" mean? | It is the table's grain: the business object or event represented by one record. State the grain and key before joining or aggregating; otherwise a valid-looking query can double-count facts. |
-| Why are so many tools listed for one stage? | Products occupy different responsibility boundaries, deployment models, and scales. Compare tools by the job they perform, then select one that fits the current latency, volume, team, and budget rather than choosing by popularity alone. |
-| What is the smallest useful stack for learning? | Start locally with Python for extraction, DuckDB for SQL, Parquet for durable files, and a simple scheduler or command-line run. Add dbt for growing SQL models, a broker for streaming, or a cloud warehouse when the exercise needs that capability. |
+- A broker is optional. A scheduled API pull into Parquet or a warehouse is
+  often enough; add a broker when low latency, replay, fan-out, or buffering
+  between independent producers and consumers justifies the operating cost.
+- A warehouse is an analytical system, a lake is a collection of files, and a
+  lakehouse adds table management, transactions, and schema controls to lake
+  storage. Workload, governance, cost, and operating capability determine the
+  choice.
+- ETL and ELT describe where transformation happens relative to loading. ETL
+  transforms before loading; ELT loads first and transforms in the destination.
+  Source sensitivity, compute location, latency, and reuse determine which is
+  appropriate.
+- Processing is the computation that runs over data; transformation is the
+  logic that changes its meaning, shape, or values. A warehouse, Spark, or
+  Flink job can provide processing while SQL, Python, or dbt expresses the
+  transformation.
+- Quality checks the data product—valid values, complete partitions, and unique
+  keys—while observability checks system behavior such as runtime, throughput,
+  resource use, and failures.
+- Transformation defines how data is cleaned or modeled. Orchestration decides
+  when it runs, what it depends on, how it retries, and how it is backfilled.
+- “One row” means the table's grain: the business object or event represented by
+  one record. State the grain and key before joining or aggregating.
+- Tools should be compared by responsibility, deployment model, scale, latency,
+  team, and budget—not by popularity alone. A useful learning stack starts
+  locally with Python, DuckDB, Parquet, and a simple scheduler; add dbt, a
+  broker, or a cloud warehouse only when the exercise requires that capability.
 
 ## Sources: Where Data Begins
 
@@ -302,16 +316,11 @@ The pipeline is successful only if it produces the right result at the right tim
 
 ## The Layered View
 
-Many teams organize data by layers. The layered-data table below shows the names and purpose of the most common boundaries.
-
-Table: Common data layers and their purposes. \label{tbl:data-layers}
-
-| Layer | Purpose | Example names |
-| --- | --- | --- |
-| Raw | Preserve source data with minimal changes | raw, bronze, landing |
-| Cleaned | Standardize formats and remove obvious defects | cleaned, silver, conformed |
-| Curated | Model data for analytics or applications | curated, gold, marts |
-| Serving | Optimize data for specific consumers | semantic layer, feature store, API store |
+Many teams organize data by layers. The names vary, but the ownership boundary
+is useful: raw or bronze data preserves source evidence with minimal changes;
+cleaned or silver data standardizes formats and removes obvious defects;
+curated or gold data applies business meaning for analytics and applications;
+and a serving layer optimizes a contract for a dashboard, feature store, or API.
 
 This layered approach helps separate concerns. Raw data supports auditability and reprocessing. Cleaned data supports reuse. Curated data supports business meaning.
 
@@ -332,33 +341,26 @@ Data engineering begins with source systems. A source system is any system that 
 
 ## Common Data Sources
 
-The source-types table below pairs common origins with the engineering concerns they introduce.
-
-Table: Common data sources and engineering concerns. \label{tbl:common-data-sources}
-
-| Source | Example data | Engineering concerns |
-| --- | --- | --- |
-| Application databases | users, orders, subscriptions | schema changes, load impact, consistency |
-| SaaS APIs | CRM, billing, marketing tools | rate limits, authentication, pagination |
-| Event streams | clicks, transactions, telemetry | ordering, duplication, late arrival |
-| Log files | application logs, access logs | volume, parsing, retention |
-| Files | CSV, JSON, Parquet, Excel | inconsistent formats, naming, arrival patterns |
-| Devices and sensors | IoT readings, machine metrics | high frequency, missing readings, clock drift |
-| Third-party datasets | market data, demographics | licensing, updates, provenance |
+Different sources create different constraints. Application databases bring
+schema changes, load impact, and consistency questions; SaaS APIs add rate
+limits, authentication, and pagination; event streams require ordering,
+duplicate, and late-arrival handling. Logs and file feeds add volume, parsing,
+retention, naming, and arrival-pattern concerns. Devices add frequency, missing
+readings, and clock drift, while third-party datasets require licensing,
+update, and provenance checks.
 
 Each source has its own failure modes. APIs throttle requests. Databases change schemas. Files arrive late. Events duplicate. A data engineer designs ingestion processes with those realities in mind.
 
 ## Structured, Semi-Structured, and Unstructured Data
 
-Structured data has a predictable schema, such as relational tables with columns and types. Semi-structured data has organization but more flexible shape, such as JSON, XML, Avro, or nested event records. Unstructured data has no simple tabular form, such as free text, images, audio, video, and documents. The data-shape table summarizes the handling implications.
-
-Table: Data shapes and typical handling approaches. \label{tbl:data-shapes}
-
-| Type | Examples | Typical handling |
-| --- | --- | --- |
-| Structured | SQL tables, CSV with stable columns | relational models, warehouses |
-| Semi-structured | JSON events, API responses, logs | schema inference, nested parsing, lakehouse tables |
-| Unstructured | PDFs, images, emails, call recordings | extraction, indexing, embeddings, metadata |
+Structured data has a predictable schema, such as relational tables or stable
+CSV. Semi-structured data has organization but a flexible shape, such as JSON,
+XML, Avro, or nested events; it usually needs schema inference, nested parsing,
+or an explicitly governed table. Unstructured data includes PDFs, images,
+emails, audio, and video; it needs extraction, indexing, embeddings, or rich
+metadata before it can be joined with tabular data. A modern platform may need
+all three, such as structured account data joined to ticket events and call
+transcripts.
 
 Modern data platforms increasingly need to combine all three. For example, a customer support analysis system might join structured account data, semi-structured ticket events, and unstructured call transcripts.
 
@@ -374,3 +376,19 @@ Before building transformations, ask:
 - Can records arrive late or change after arrival?
 - What timezone defines dates and reporting periods?
 - Which fields are source facts and which are derived?
+
+**Common beginner mistakes.** Treating a warehouse as an ingestion tool,
+choosing a vendor before writing latency and recovery requirements, confusing a
+Parquet file with a transactional table, and treating a successful job status
+as proof that the data is correct are all common ways to build a fragile
+pipeline. Name the responsibility boundary and the evidence needed at each
+stage before adding another product.
+
+**Serving bridge.** The same trusted dataset can support different consumers.
+Analytics usually needs a documented, queryable mart; machine learning needs
+point-in-time training data and repeatable features; applications need a
+low-latency contract with explicit availability and freshness behavior.
+Finance and quantitative research add requirements such as timestamp
+provenance, correction history, market-calendar semantics, and reproducibility.
+The lifecycle stays the same, but the contract and operating controls become
+more demanding.

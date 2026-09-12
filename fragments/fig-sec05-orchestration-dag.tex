@@ -1,19 +1,24 @@
 \begin{diagram}[
   type=flow,
+  width=\textwidth,
   label={fig:sec05-orchestration-dag},
-  caption={Each task in this DAG depends on the one before it completing successfully; Validate is the task most likely to fail first, which blocks Transform and Publish until the data is fixed or quarantined.},
+  caption={The orchestration DAG makes the data path explicit and shows the blocked downstream path after validation fails; a repair or quarantine decision must happen before Transform and Publish can proceed.},
   source={Author's synthesis.},
-  description={A top-down flow of five dependent tasks in reading order: Extract, Load, Validate, Transform, and Publish. Extract and Load must finish before Validate runs; Validate must pass before Transform runs; Transform must finish before Publish runs. A failed Validate task blocks Transform and Publish rather than letting them run on unchecked data.}
+  description={A compact left-to-right DAG contains Extract, Load, Validate, Transform, and Publish. The data path runs through all five tasks. A validation error branches downward to a Failed or quarantined state and then to Blocked downstream, making clear that Transform and Publish do not run on unchecked data.}
 ]
-% Five stages fit the direct-node layout cleanly and keep the dependency
-% direction obvious on the page.
-\RKNode{extract}{0}{0}{Extract}
-\RKNode{load}{0}{-3.05}{Load}
-\RKNode{validate}{0}{-6.10}{Validate}
-\RKNode{transform}{0}{-9.15}{Transform}
-\RKNode{publish}{0}{-12.20}{Publish}
+% The main data path is horizontal; the lower branch names the blocked
+% downstream outcome after a deterministic validation failure.
+\RKNode[text width=22mm,align=center]{extract}{0}{0}{Extract}
+\RKNode[text width=22mm,align=center]{load}{3.15}{0}{Load}
+\RKNode[text width=22mm,align=center]{validate}{6.30}{0}{Validate}
+\RKNode[text width=22mm,align=center]{transform}{9.45}{0}{Transform}
+\RKNode[text width=22mm,align=center]{publish}{12.60}{0}{Publish}
+\RKNode[rk terminal,text width=22mm,align=center]{failed}{6.30}{-2.15}{Failed or quarantined}
+\RKNode[rk terminal,text width=22mm,align=center]{blocked}{9.45}{-2.15}{Blocked downstream}
 \flowedge{extract}{load}
 \flowedge{load}{validate}
 \flowedge{validate}{transform}
 \flowedge{transform}{publish}
+\RKEdge[validation error]{optional}{validate}{failed}
+\RKEdge[do not publish]{optional}{failed}{blocked}
 \end{diagram}

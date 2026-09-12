@@ -67,6 +67,24 @@ The largest levers are usually:
 
 Track unit measures such as cost per successful pipeline run, cost per gigabyte processed, or cost per dashboard refresh. Set budgets and review unusually expensive queries, retries, and storage growth. A cheaper design is not automatically better if it loses data or requires excessive on-call work; compare total cost of ownership, including people and failure recovery.
 
+Make the main cost drivers visible in the design record:
+
+- **Storage:** retained raw history, table snapshots, replicas, and small-file
+  overhead; measure cost per retained terabyte or per month of history.
+- **Compute:** scans, joins, full refreshes, and idle clusters; measure cost per
+  successful interval or per gigabyte processed.
+- **Orchestration:** scheduler, worker, sensor, and retry overhead; measure
+  cost per workflow run and investigate repeated retries.
+- **Always-on streaming:** brokers, consumers, checkpoints, and headroom for
+  bursts; measure cost per million events or per hour of freshness delivered.
+- **Observability and transfer:** logs, traces, metric retention, cross-region
+  movement, and egress; measure cost per monitored asset or dashboard refresh.
+
+Products often collapse several lifecycle stages, but the conceptual boundaries
+still matter. They determine who owns a failure, which evidence is retained,
+where cost is incurred, and what would have to change if the product or
+operating model changes.
+
 ## Architecture Patterns
 
 Architecture patterns are useful vocabulary for discussing trade-offs, not templates to copy. They operate at different levels and can be combined: Lambda and Kappa describe processing paths, medallion describes data organization, and data mesh describes an organizational model. The pattern-comparison table keeps the choice tied to a workload and its main risk.
@@ -92,27 +110,21 @@ Prefer backward-compatible changes when possible. Add a nullable field before ma
 
 ## Tools and Technology Landscape
 
-Tool names change faster than capabilities. The following maps are deliberately small; each row describes a responsibility boundary and gives representative choices rather than an exhaustive catalogue. A single product may cover several rows, but its responsibilities should still be named separately. The first table covers the core pipeline capabilities.
+Tool names change faster than capabilities. A single product may implement
+several responsibilities, but the boundaries still matter for ownership,
+failure handling, cost, and exit planning. The platform-boundaries figure maps
+the conceptual layers and representative artifacts without implying that a
+particular vendor is required.
 
-Table: Core data-platform capabilities and representative tools. \label{tbl:core-tool-landscape}
+[[REPORTKIT-VISUAL:fig:sec08-platform-boundaries]]
 
-| Capability | Responsibility | Representative starting choices | Boundary to remember |
-| --- | --- | --- | --- |
-| Source systems | Generate and own operational records or external data | PostgreSQL or MySQL, SaaS APIs, files, application events | The source system defines what happened; the pipeline should not silently invent source semantics |
-| Ingestion and transport | Extract, transfer, buffer, and acknowledge data | A Python connector or managed connector for batch; a Kafka-compatible broker or cloud pub/sub service for events | A broker transports and retains events; it is not a warehouse or an orchestrator |
-| Durable storage and tables | Retain data and provide transactional or analytical table semantics | Object storage with Parquet; Iceberg, Delta Lake, or Hudi; a managed warehouse | File format, table format, warehouse, and query engine are related but different layers |
-| Query and processing | Filter, join, aggregate, and reshape data | SQL in a warehouse or DuckDB; dbt for SQL models; Spark or Flink when distributed or streaming execution is required | Processing computes results; it does not decide when the work runs |
-| Orchestration | Represent dependencies, schedule work, retry, backfill, and record runs | Airflow, Dagster, Prefect, or a managed workflow service | An orchestrator coordinates tasks; it should not become the place where all business logic is hidden |
-| Quality and observability | Test data, record signals, detect drift, and support diagnosis | Native assertions and metrics first; dbt tests, Great Expectations, or Soda as needs grow | Tests state expected conditions; observability explains behavior over time |
-| Catalog and governance | Describe, discover, classify, trace, and control data | A platform catalog, DataHub, or a commercial catalog | A catalog documents and helps enforce policy; it is not a replacement for ownership |
-
-The cross-cutting and consumption table completes the landscape without leaving a single serving row stranded on a continuation page.
-
-Table: Cross-cutting governance and consumption capabilities. \label{tbl:cross-cutting-tool-landscape}
-
-| Capability | Responsibility | Representative starting choices | Boundary to remember |
-| --- | --- | --- | --- |
-| Serving and consumption | Deliver trusted data to people or applications | BI tools such as Looker, Tableau, or Power BI; APIs or feature stores for programmatic consumers | A dashboard is a consumer and does not remove the need for data contracts and freshness guarantees |
+The practical boundary list is: source systems generate facts; ingestion and
+transport move and buffer them; storage and table formats retain them; query
+and processing compute results; orchestration controls when work runs; quality
+and observability test and explain behavior; governance documents and controls
+use; and serving delivers a contract to a consumer. A warehouse or managed
+lakehouse may bundle several of these, but bundling does not make the
+responsibilities interchangeable.
 
 The examples are illustrative, not endorsements. A warehouse may provide storage, query execution, access control, and monitoring in one service. An open table format may provide table semantics on object storage but still need a query engine and catalog. Name the capability first so that a product change does not change the architecture by accident.
 
@@ -130,6 +142,30 @@ Evaluate tools against the workload and the team that will operate them. A compa
 Managed services usually reduce infrastructure work, provide integrated scaling and support, and let a small team reach a service level sooner. They can also introduce usage-based cost, data-transfer charges, provider-specific interfaces, migration effort, and less control over failure behavior. Open-source software can offer portability, customization, and inspectable behavior, but the team owns deployment, upgrades, security, capacity planning, and on-call response. "Open source" is not the same as "free."
 
 Use a managed option by default when the team is small, the operational requirement is urgent, or the capability is not a source of competitive advantage. Consider self-managed or open-source components when portability, deep customization, local deployment, or existing operational expertise justifies the additional work. A hybrid is often reasonable: managed storage or warehouse services with open formats and version-controlled transformation code. Record the trade-off and the exit cost rather than treating one operating model as universally superior.
+
+**Choosing a Stack Under Constraints.**
+
+The right default depends on who must learn, operate, and explain the system.
+
+- **Solo learner:** start with Python, DuckDB, local Parquet, SQL models, and
+  one command-line or lightweight scheduler. Add a broker only when replay or
+  streaming is the lesson; defer distributed compute and several catalogs.
+- **Small company:** prefer managed storage or a warehouse, one orchestrator,
+  and native tests/metrics. Choose open file or table formats when portability
+  matters; add self-managed services only when an actual cost, latency, or
+  control constraint justifies the on-call burden.
+- **Enterprise platform:** standardize capability interfaces, ownership,
+  identity, lineage, and contract checks before optimizing for every team. A
+  shared platform can provide defaults while domains retain responsibility for
+  semantics and quality.
+- **Regulated finance:** bias toward immutable raw evidence, timestamp and
+  correction provenance, access audit, retention/deletion controls, replayable
+  calculations, and explicit approval paths. Lower latency is secondary to
+  reproducibility unless a measured use case says otherwise.
+
+These are starting biases, not four vendor stacks. Change the default when a
+measured freshness target, data volume, recovery objective, regulatory rule, or
+team capability requires it.
 
 ## Minimum Viable Stack and Learning Order
 

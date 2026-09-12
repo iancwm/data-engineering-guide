@@ -141,6 +141,10 @@ delivery semantics, source impact, and replay behavior shape the design.
 - A table comparing at-most-once, at-least-once, and exactly-once processing.
 - A compact Mermaid sequence diagram for acknowledgement, retry, duplicate,
   and idempotent sink behavior.
+- A rate/queue chart for backpressure, an acknowledgement/retry sequence for
+  duplicate formation, and an event-time timeline for watermarks and late
+  data. These mechanism figures should replace explanatory table rows or
+  generic flow boxes; they are not decorative additions.
 - A separate CDC flow figure only when the CDC discussion needs more than the
   source-to-sink sequence can show.
 
@@ -169,6 +173,9 @@ warehouses or lakehouses.
   storage.
 - A small figure showing partition pruning and clustering on a date or key.
 - A warning figure or before/after table for the small-files problem.
+- Prefer a before/after physical-layout figure for small files and compaction.
+  Keep the logical table unchanged in the visual so readers distinguish file
+  maintenance from a data-model change.
 
 **Key nodes and labels:** `Object Storage`, `Parquet or Other File Format`,
 `Table Format`, `Catalog`, `Query or Compute Engine`, `Warehouse`, `Lake`,
@@ -196,6 +203,9 @@ visible.
   incremental processing.
 - A compact before/after data example for a grain change or join; prefer a
   table over a dense diagram.
+- When the teaching goal is row multiplication, use a compact before/after
+  figure instead of a prose-only warning. The caption must state the input and
+  output grain.
 
 **Key nodes and labels:** `Raw`, `Standardized`, `Curated`, `Fact`,
 `Dimension`, `Join Key`, `Grain`, `Aggregation`, `Incremental Boundary`,
@@ -220,6 +230,9 @@ backfills, concurrency, and the boundary between orchestration and processing.
   behavior.
 - A compact schedule/SLA table; do not use a dashboard screenshot as the
   primary explanation.
+- Add a state-machine figure for scheduled, running, retrying, succeeded,
+  failed, and skipped states. State diagrams must distinguish transient from
+  deterministic failures.
 
 **Key nodes and labels:** `Extract`, `Load`, `Validate`, `Transform`,
 `Publish`, `Dependency`, `Retry`, `Timeout`, `Backfill`, `Catch-up`,
@@ -245,6 +258,8 @@ pipeline.
   observability, and incident management.
 - A small decision matrix for blocking, warning, quarantining, and accepting a
   known exception.
+- Use a reconciliation flow or swimlane when the reader must compare source,
+  raw, curated, aggregate, and exception counts at different grains.
 
 **Key nodes and labels:** `Completeness`, `Validity`, `Uniqueness`,
 `Consistency`, `Accuracy`, `Timeliness`, `Freshness`, `Test`, `Expectation`,
@@ -319,6 +334,9 @@ appropriate to their time and experience.
   production-style system.
 - A prerequisite matrix mapping concepts to hands-on deliverables and evidence
   of completion.
+- The capstone architecture should be the cumulative view of the handoffs
+  introduced in Sections 2--7, with named data assets and separate data,
+  control, quality, and ownership paths.
 
 **Key nodes and labels:** `SQL`, `Python`, `Ingestion`, `Storage`,
 `Transformation`, `Orchestration`, `Quality`, `Governance`, `Streaming`,
@@ -387,6 +405,12 @@ generated at build time; never type `Figure 1` into prose.
 - Put a plain-language interpretation immediately after a complex figure.
 - Test figures at the final print width; a diagram that is legible on a screen
   may fail when reduced to a single-column page.
+- Mechanism diagrams should use the smallest useful form: timelines for clocks,
+  sequences for retries, state machines for recovery, before/after panels for
+  physical or cardinality changes, and swimlanes for multi-stage handoffs.
+- Where data and control paths coexist, use labels or line styles as well as
+  color. Captions must name the failure, state, or grain a reader is meant to
+  notice.
 
 ## Pandoc and LaTeX Conventions
 
@@ -448,6 +472,11 @@ approved Markdown subset.
   highlighting style with a high-contrast monochrome fallback.
 - Commands and identifiers in prose use backticks; do not format an entire
   paragraph as code.
+- New instructional listings must be captioned and semantically labelled,
+  preceded by one of **Runnable with adaptation**, **Pseudocode**, or
+  **Illustrative**, and followed by a sentence explaining the guarantee or
+  boundary the listing demonstrates. The classification describes reader
+  expectations; it is not a claim that the example is production-ready.
 
 Mermaid blocks are source material for figures, not guaranteed LaTeX output.
 The publication skill must render or replace them before producing the final
@@ -469,6 +498,21 @@ reference material. Keep tables narrow enough for the target page width:
 Do not use tables to lay out paragraphs or simulate a diagram. Use a figure for
 flow, dependency, topology, or event order. Use a table when the reader needs
 to compare the same attributes across alternatives.
+
+Prefer three columns for instructional tables. A single-row table should be a
+deliberate callout, not a workaround for a continuation-page layout issue. If
+capability boundaries, state, motion, or physical layout are the concept being
+taught, replace the table with a figure and keep only the comparison facts in
+prose or a compact table.
+
+### Capstone continuity
+
+Sections 2--7 should end with a capstone continuation that names the prior
+input, the new output, its grain or time semantics, and the next handoff. The
+Section 9 architecture is a culmination of those handoffs, not an unrelated
+second architecture. Keep concrete names such as `raw_trades`,
+`curated_trades`, `fct_hourly_ohlcv`, `quality_alerts`, and
+`quarantine/trades` consistent across text, listings, and figures.
 
 ### Links, References, and Claims
 
@@ -513,6 +557,13 @@ or comparison tables and explain their capability category.
   grayscale printing.
 - [ ] Figures are legible at final page width and do not split awkwardly.
 - [ ] Tables are used for comparison, not layout, and have repeatable headers.
+- [ ] Mechanism figures use timelines, sequences, state, before/after, or
+      swimlane forms when those forms explain the concept more directly than
+      prose or a table.
+- [ ] Every instructional code listing states whether it is runnable with
+      adaptation, pseudocode, or illustrative.
+- [ ] Capstone continuations identify the previous artifact, new artifact,
+      grain/time assumption, and next handoff.
 
 ### Reproducibility and Safety
 
@@ -578,3 +629,22 @@ publication pass.
 - Takeaway boxes, page-rhythm tuning, PDF accessibility metadata, grayscale and
   margin proofing, and final cross-reference/render checks require the
   publication build and an explicit PDF QA pass.
+
+## 2026-09-07 Instructional Enrichment Implementation Plan
+
+This entry supersedes the figure and listing items marked blocked in the
+2026-09-06 content log below; that earlier entry remains as historical context.
+
+The next content pass adds mechanism figures for backpressure, delivery retry
+and deduplication, event-time watermarks, small-file compaction, join
+cardinality, orchestration recovery, and reconciliation. It also replaces the
+capstone milestone and Section 8 capability-boundary tables with a swimlane and
+architecture figure, respectively. New listings are short, captioned, and
+classified so readers know which examples can run after adaptation.
+
+The implementation keeps the existing fourteen figures and adds nine semantic
+figures, including the revised capstone architecture. The publication engine
+already exposes state, comparison, timeline, process, and architecture
+primitives; each new fragment should use those primitives rather than manual
+coordinate workarounds. Final PDF visual QA remains required for scale,
+whitespace, grayscale, code wrapping, and cross-reference checks.

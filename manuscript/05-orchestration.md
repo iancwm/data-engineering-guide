@@ -2,19 +2,20 @@
 
 Orchestration coordinates data workflows. It decides when work may start, which tasks must run first, what can run in parallel, and what should happen when a task is late or fails. An orchestrator records the state of each run so that a person or another system can understand what happened and take the next action.
 
-Orchestration is related to, but different from, the other stages of the lifecycle. The responsibilities table separates coordination from ingestion, transformation, storage, and observability.
-
-Table: Lifecycle concerns and orchestration responsibilities. \label{tbl:orchestration-concerns}
-
-| Concern | Main question | Typical responsibility |
-| --- | --- | --- |
-| Ingestion | How do we move data from a source? | Connect to an API, stream, database, or file location |
-| Transformation | How do we change data into a useful shape? | Parse, join, aggregate, and model records |
-| Storage | Where and in what format do we keep data? | Persist files, tables, snapshots, and indexes |
-| Orchestration | When and under what conditions does work run? | Order tasks, pass parameters, retry, pause, and backfill |
-| Monitoring and observability | Is the system behaving as expected? | Collect signals, detect anomalies, and notify owners |
+Orchestration is related to, but different from, the other stages of the
+lifecycle. Ingestion connects to a source, transformation changes a record's
+meaning or shape, and storage persists files or tables. Orchestration orders
+those operations, passes parameters, retries safe work, pauses dependent paths,
+and runs backfills. Monitoring and observability collect the evidence—runtime,
+throughput, freshness, failures, and anomalies—that tells an owner whether the
+workflow and its outputs are healthy.
 
 One platform can provide several of these capabilities. For example, a managed service may schedule a dbt job, display its logs, and run SQL transformations. The concepts are still distinct: the scheduler coordinates the work, dbt defines transformations, and monitoring evaluates the health of the run and its outputs.
+
+Decision: choose the thinnest control layer that can express the required
+dependencies, interval parameters, retries, concurrency limits, and run history.
+Do not put transformation semantics into the scheduler merely because one
+product can execute both.
 
 ## Why Orchestration Matters
 
@@ -159,6 +160,12 @@ Partial outputs should not appear as complete assets. Write to a temporary or ru
 
 Orchestration can route an alert, pause a dependent branch, or launch a repair workflow. Monitoring and observability provide the evidence used for those decisions: logs, metrics, freshness, volume, schema, and lineage signals. An orchestrator is not a replacement for monitoring, and an alert is not a repair strategy by itself.
 
+The recovery state machine distinguishes a transient retry from a terminal
+failure. A validation error should block downstream publication and surface an
+owner, not consume the retry budget indefinitely.
+
+[[REPORTKIT-VISUAL:fig:sec05-retry-state]]
+
 ## Backfills and Reprocessing
 
 A backfill runs a workflow for past data intervals that were missing, late, or invalid. Reprocessing is the broader act of computing data again, often because transformation logic changed or a source correction arrived. Both should use the same version-controlled code path as normal runs, with an explicit interval or partition parameter.
@@ -288,6 +295,63 @@ A practical hourly workflow is:
 5. run quality checks and publish the aggregate asset.
 
 The workflow is data-aware: the hourly aggregate waits for a complete raw partition and successful checks. If an hour is corrected, rerun that hour with the same partition key. Limit concurrent historical hours so a repair does not overwhelm the local broker, object store, or query engine.
+
+**Illustrative.** The following Airflow-style definition keeps the scheduler
+focused on intervals, retry policy, and dependencies. The transformation SQL
+remains in version-controlled models so it can be tested and rerun outside the
+orchestrator.
+
+Listing: Hourly capstone workflow definition. \label{lst:sec05-capstone-dag}
+
+```python
+from datetime import timedelta
+
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.utils.dates import days_ago
+
+
+with DAG(
+    dag_id="crypto_hourly_models",
+    start_date=days_ago(2),
+    schedule="5 * * * *",
+    catchup=True,
+    max_active_runs=2,
+    default_args={
+        "retries": 2,
+        "retry_delay": timedelta(minutes=5),
+        "execution_timeout": timedelta(minutes=20),
+    },
+) as dag:
+    wait_for_raw = PythonOperator(
+        task_id="wait_for_raw_partition",
+        python_callable=wait_for_complete_partition,
+    )
+    build_models = PythonOperator(
+        task_id="build_models",
+        python_callable=run_dbt_for_data_interval,
+    )
+    validate_and_publish = PythonOperator(
+        task_id="validate_and_publish",
+        python_callable=run_blocking_quality_checks,
+    )
+
+    wait_for_raw >> build_models >> validate_and_publish
+```
+
+In a real DAG, the callables receive the run's UTC data interval and publish
+only after the quality gate succeeds. The example's retry policy is for
+transient infrastructure failures; deterministic test failures should stop
+the task and go to the runbook.
+
+The capstone handoff is `curated_trades → scheduled lookback model → quality
+gate`. Section 6 consumes the run metadata, output interval, and failure state
+alongside the data itself.
+
+**Common beginner mistakes.** Using wall-clock time instead of an explicit
+data interval, retrying deterministic validation errors, hiding transformation
+logic in scheduler callbacks, and launching a backfill without concurrency or
+source-rate controls all make recovery less safe.
 
 ## Orchestration Design Checklist
 

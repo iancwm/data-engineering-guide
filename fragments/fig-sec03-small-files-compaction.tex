@@ -1,0 +1,24 @@
+\begin{diagram}[
+  type=compare,
+  width=\textwidth,
+  label={fig:sec03-small-files-compaction},
+  caption={Compaction changes physical layout without changing the logical table: many micro-batch Parquet files become fewer right-sized files containing the same trade rows.},
+  source={Author's synthesis.},
+  description={A before-and-after comparison. Before compaction, one event-time partition contains many tiny Parquet files and a query must open each file. A compaction job rewrites the same logical rows into fewer right-sized files. The table grain and row meaning do not change.}
+]
+\begin{reportcompare}[panel width=5.1,gap=2.25]
+  \panel{before}{Before: micro-batch landing}
+  \panel{after}{After: compacted partition}
+  \panelitem{before}{0}{tiny Parquet file}
+  \panelitem{before}{1}{tiny Parquet file}
+  \panelitem{before}{2}{tiny Parquet file}
+  \panelitem{before}{3}{tiny Parquet file}
+  \panelitem{before}{4}{tiny Parquet file}
+  \panelitem{before}{5}{many file opens}
+  \panelitem{after}{0}{right-sized file}
+  \panelitem{after}{1}{right-sized file}
+  \panelitem{after}{2}{same logical rows}
+  \panelitem{after}{3}{fewer file opens}
+  \transformarrow{compact and\\commit atomically}
+\end{reportcompare}
+\end{diagram}

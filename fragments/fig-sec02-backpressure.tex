@@ -1,0 +1,24 @@
+\begin{diagram}[
+  type=timeline,
+  label={fig:sec02-backpressure},
+  caption={Backpressure makes a rate mismatch visible: a 10,000-message-per-second producer temporarily outpaces a 1,000-message-per-second consumer, so durable queue depth grows until capacity catches up.},
+  source={Author's synthesis.},
+  description={Three aligned tracks show a producer emitting 10,000 messages per second, a consumer initially writing 1,000 messages per second, and a broker queue growing while the rates differ. A later scaled consumer catches up and queue depth falls. The broker absorbs the mismatch temporarily but does not remove the capacity limit.}
+]
+\begin{reporttimeline}[tracks={Producer,Consumer,Queue depth},span=12.0,track gap=1.55]
+  \event{Producer}{0.07}{10k/s}
+  \event{Producer}{0.23}{10k/s}
+  \event{Producer}{0.39}{10k/s}
+  \event{Producer}{0.55}{10k/s}
+  \event{Consumer}{0.07}{1k/s}
+  \event{Consumer}{0.23}{1k/s}
+  \event{Consumer}{0.39}{1k/s}
+  \event[draw=LinkBlue,fill=white]{Consumer}{0.74}{10k/s}
+  \event[draw=LinkBlue,fill=white]{Consumer}{0.90}{catch-up}
+  \event{Queue depth}{0.23}{grows}
+  \event{Queue depth}{0.55}{lag alert}
+  \event{Queue depth}{0.78}{falls}
+  \skewarrow{Producer}{0.23}{Queue depth}{0.23}
+  \skewarrow{Producer}{0.55}{Queue depth}{0.55}
+\end{reporttimeline}
+\end{diagram}

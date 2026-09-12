@@ -141,6 +141,33 @@ Open table formats commonly support:
 
 Open table formats improve interoperability, but they do not remove all vendor dependence. Engine support varies. A feature written by one engine may not be readable by another if the integration is incomplete or uses format-specific extensions. The safe design principle is to test the actual engines that will read and write the table.
 
+**Illustrative.** The following table-definition pseudocode separates the
+Parquet files from the transactional table metadata around them. Exact syntax
+varies by engine and table format; the durable design decisions are the schema,
+UTC partition, logical key, and table location.
+
+Listing: Curated table definition over trade files. \label{lst:sec03-table-definition}
+
+```sql
+CREATE TABLE curated_trades (
+    exchange_name VARCHAR,
+    asset_symbol VARCHAR,
+    source_trade_id BIGINT,
+    event_timestamp TIMESTAMP,
+    ingested_at TIMESTAMP,
+    price DECIMAL(20, 8),
+    quantity DECIMAL(20, 8),
+    raw_payload JSON
+)
+USING ICEBERG                 -- or the equivalent Delta table command
+PARTITIONED BY (days(event_timestamp), hours(event_timestamp))
+LOCATION 's3://crypto-lake/curated/trades';
+```
+
+The table format can make commits and snapshots atomic, but it does not infer
+that two rows with the same composite trade key are duplicates. The model still
+needs deterministic deduplication and quality checks.
+
 It is also important not to overstate idempotency. Delta, Iceberg, and Hudi provide transactional table commits, but they do not automatically know that two rows represent the same business event. Deduplication still requires stable keys, merge logic, constraints, or explicit data quality checks.
 
 ## File Formats
@@ -175,6 +202,31 @@ The partition-pruning figure shows the intended physical-read decision: a predic
 
 [[REPORTKIT-VISUAL:fig:sec03-partition-pruning]]
 
+**Runnable with adaptation.** This DuckDB query makes partition pruning
+concrete by filtering the same UTC event-time columns used to derive the
+`event_date` and `event_hour` path. The local glob can be replaced by an
+object-store URI when the relevant DuckDB extension and credentials are
+configured.
+
+Listing: Partition-pruned Parquet query. \label{lst:sec03-parquet-partition-query}
+
+```sql
+SELECT
+    exchange_name,
+    asset_symbol,
+    source_trade_id,
+    event_timestamp,
+    price,
+    quantity
+FROM read_parquet('data/raw/trades/**/*.parquet', hive_partitioning = true)
+WHERE event_timestamp >= TIMESTAMP '2026-09-07 02:00:00+00'
+  AND event_timestamp < TIMESTAMP '2026-09-07 03:00:00+00';
+```
+
+The predicate is useful only when it matches the layout and statistics the
+engine can inspect; partitioning is not a substitute for measuring the query
+plan.
+
 Bad partitioning can hurt performance. Partitioning by a high-cardinality field such as user ID may create too many tiny partitions. Partitioning by a column that queries rarely filter on may add complexity without benefit.
 
 Clustering or sorting organizes records within files or partitions. This helps engines skip file ranges using metadata such as minimum and maximum values. Techniques include sorting, bucketing, Z-ordering, and engine-specific clustering.
@@ -188,6 +240,13 @@ Typical mitigations include:
 - avoiding excessive partition granularity;
 - using table-format maintenance commands;
 - separating raw landing frequency from curated table optimization.
+
+Compaction changes the physical file layout, not the logical grain of
+`curated_trades`. The before/after view makes the trade-off concrete: many
+small micro-batch files can represent the correct rows and still impose query
+overhead until a maintenance job rewrites them into fewer right-sized files.
+
+[[REPORTKIT-VISUAL:fig:sec03-small-files-compaction]]
 
 The right file size depends on engine, workload, compression, and cloud environment. Rules of thumb such as 128 MB to 1 GB per file can be useful starting points, but production systems should measure.
 
@@ -310,6 +369,14 @@ At the end of this stage, the project should expose:
 - documented UTC timestamp fields, partition columns, schema, table location, and retry or merge behavior.
 
 Section 4 consumes `curated_trades` as its input. It should not infer the trade key, reconstruct event time from a path, or mix raw and curated rows without saying so. Its staging model will preserve the one-row-per-trade grain, and its hourly model will deliberately change that grain.
+
+The capstone handoff is `raw_trades + manifest → curated_trades + catalog`.
+Storage owns durable files, table commits, metadata, and compaction; Section 4
+owns the meaning of derived models and their grain.
+
+**Common beginner mistakes.** Partitioning by a high-cardinality identifier,
+confusing Parquet with table transactions, and treating raw files as a governed
+curated model all create costs that later transformations cannot hide.
 
 ## Storage Design Checklist
 

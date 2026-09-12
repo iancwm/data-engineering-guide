@@ -1,0 +1,24 @@
+\begin{diagram}[
+  type=swimlane,
+  width=\textwidth,
+  label={fig:sec06-reconciliation-flow},
+  caption={Reconciliation explains a closed UTC interval from source delivery through publication: accepted attempts, quarantined records, duplicate attempts, distinct trade keys, and finalized hourly counts remain separate evidence.},
+  source={Author's synthesis.},
+  description={A reconciliation swimlane flows from source count to received raw attempts, then separates accepted, quarantined, and duplicate attempts. Accepted records become distinct trade keys in curated trades, whose count is compared with the trade fact and finalized hourly aggregate count. Any mismatch goes to an exception queue. Each comparison refers to the same closed event-time interval but states its own grain.}
+]
+\begin{reportswimlane}[lanes={Source,Raw accounting,Curated and models,Action},lane spacing=1.45,width=12.2]
+  \lanestep{source-count}{Source}{source delivery count}{1}
+  \lanestep{raw-count}{Raw accounting}{received raw attempts}{2}
+  \lanestep{accepted}{Raw accounting}{accepted and duplicate attempts}{3}
+  \lanestep{quarantine}{Action}{quarantine error code}{3}
+  \lanestep{trade-keys}{Curated and models}{distinct trade keys}{4}
+  \lanestep{hourly}{Curated and models}{finalized hourly count}{5}
+  \lanestep{exception}{Action}{exception queue}{5}
+  \laneflow{source-count}{raw-count}
+  \laneflow{raw-count}{accepted}
+  \handoff{accepted}{trade-keys}
+  \handoff{trade-keys}{hourly}
+  \laneflow{raw-count}{quarantine}
+  \laneflow{hourly}{exception}
+\end{reportswimlane}
+\end{diagram}

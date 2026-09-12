@@ -29,6 +29,26 @@ A strong beginner-to-intermediate project is a complete analytics pipeline:
 7. Create a dashboard or summary report.
 8. Document lineage, assumptions, and known limitations.
 
+**Illustrative.** A small repository can make the lifecycle visible without
+committing to one orchestrator or cloud provider:
+
+Listing: Minimal capstone repository tree. \label{lst:sec09-capstone-repo-tree}
+
+```text
+crypto-lakehouse/
+|-- ingestion/{producer.py, consumer.py}
+|-- models/{staging.sql, fct_hourly_ohlcv.sql}
+|-- orchestration/hourly_workflow.py
+|-- tests/{fixtures/, test_contracts.yml}
+|-- contracts/curated_trades.yml
+|-- docs/{runbook.md, decisions.md}
+|-- config.example.yml
+`-- README.md
+```
+
+The tree is a thinking aid, not a required framework layout. Secrets belong in
+the runtime's secret store or an ignored local file, never in the repository.
+
 Possible datasets include public transit arrivals, weather observations, stock prices, sports results, open government datasets, or e-commerce sample data.
 
 The capstone architecture figure shows how those project steps fit together as one operable data product, from source capture through quality controls to a reader-facing output.
@@ -51,3 +71,9 @@ An advanced project adds production-like concerns:
 - incident runbooks.
 
 The goal is not just to move data. The goal is to operate a reliable data product.
+
+The completed project also provides a bridge to three kinds of work: an
+analytics consumer can query the documented hourly mart, an ML consumer can
+build point-in-time features from the trade facts, and a finance or quant
+consumer can reproduce a UTC interval with its source identifiers, correction
+history, and quality evidence.

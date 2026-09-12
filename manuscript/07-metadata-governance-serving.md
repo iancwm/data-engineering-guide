@@ -92,6 +92,42 @@ The data-contract figure summarizes that boundary: producers declare what they p
 
 [[REPORTKIT-VISUAL:fig:sec07-data-contract]]
 
+**Illustrative.** This versioned contract makes the producer's promise
+testable without tying the guide to one schema registry. It names the grain,
+units, freshness, classification, and compatibility rule that consumers need
+to plan around.
+
+Listing: Versioned curated-trades data contract. \label{lst:sec07-data-contract}
+
+```yaml
+name: curated_trades
+version: 1.0.0
+owner: market-data-platform
+grain: one row per (exchange_name, asset_symbol, source_trade_id)
+freshness:
+  target: 5 minutes
+  clock: latest_landed_at
+classification: internal
+compatibility: backward-compatible additions only
+quality:
+  required_fields: [exchange_name, asset_symbol, source_trade_id, event_timestamp]
+  unique_key: [exchange_name, asset_symbol, source_trade_id]
+  rules:
+    - price > 0
+    - quantity > 0
+fields:
+  event_timestamp: {type: timestamp, timezone: UTC, meaning: exchange trade time}
+  ingested_at: {type: timestamp, timezone: UTC, meaning: producer receipt time}
+  price: {type: decimal, unit: USDT per BTC}
+  quantity: {type: decimal, unit: BTC}
+change_policy:
+  breaking_change: version the contract and provide a migration window
+  owner_notice: required before deployment
+```
+
+The contract does not replace quality checks. It gives those checks, the
+producer, and the consumer a shared place to state what should be true.
+
 ## Access, Classification, and Retention
 
 Governance also includes protecting sensitive data. Data may include personal information, payment details, health records, credentials, confidential business information, or regulated investment data.
@@ -151,3 +187,15 @@ Feature stores help manage reusable features, but they do not remove the need fo
 Some data products serve applications directly. Examples include recommendation APIs, fraud scoring systems, customer 360 views, inventory availability services, and personalization engines.
 
 Application serving usually requires lower latency and stronger availability than analytical serving. Data may need to be pushed into caches, search indexes, key-value stores, or APIs designed for operational reads.
+
+The capstone's serving contract is `fct_hourly_ohlcv`: a dashboard can accept
+finalized hourly bars with a documented freshness indicator, a model may need
+point-in-time slices and correction history, and an application API may need a
+separate low-latency projection. These are different consumer contracts over
+the same governed lineage, not reasons to erase the underlying grain or time
+semantics.
+
+**Common beginner mistakes.** Cataloguing tables without an accountable owner,
+treating a schema as if it defines business meaning, granting raw-layer access
+by default, and changing a contract without a compatibility window all shift
+risk to downstream consumers without making it visible.

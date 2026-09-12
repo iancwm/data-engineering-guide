@@ -1,0 +1,19 @@
+\begin{diagram}[
+  type=timeline,
+  label={fig:sec02-delivery-retry-dedup},
+  caption={A lost acknowledgement creates a duplicate opportunity: the sink commits once, the producer retries, and the deterministic trade key lets the idempotent sink keep one logical result.},
+  source={Author's synthesis.},
+  description={Three tracks show a producer sending event T-42, a sink committing it, and an acknowledgement being lost. The producer retries T-42, the sink detects the existing key, and the final result contains one logical event even though two delivery attempts occurred.}
+]
+\begin{reporttimeline}[tracks={Producer,Sink,ACK path},span=12.0,track gap=1.7]
+  \event{Producer}{0.08}{send T-42}
+  \event{Sink}{0.27}{commit key}
+  \event{ACK path}{0.43}{ACK lost}
+  \event{Producer}{0.62}{retry T-42}
+  \event{Sink}{0.81}{dedup key}
+  \event[draw=LinkBlue,fill=white]{Sink}{0.95}{one result}
+  \skewarrow{Producer}{0.08}{Sink}{0.27}
+  \skewarrow{Sink}{0.27}{ACK path}{0.43}
+  \skewarrow{Producer}{0.62}{Sink}{0.81}
+\end{reporttimeline}
+\end{diagram}

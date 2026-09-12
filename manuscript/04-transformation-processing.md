@@ -159,6 +159,13 @@ Every column in a model should match its grain. If a table is one row per trade,
 
 Many analytical errors are grain errors. Joining a daily customer table to a transaction table without aggregating first may multiply rows and inflate metrics. Declaring grain before writing SQL prevents a surprising amount of damage.
 
+The join-cardinality figure shows why a query can remain syntactically valid
+while its measure becomes wrong: one trade row joined to several reference
+rows produces several output rows. Pre-aggregate or deduplicate the reference
+side when the intended output is still one row per trade.
+
+[[REPORTKIT-VISUAL:fig:sec04-join-cardinality]]
+
 ## Aggregation and Metrics
 
 Aggregation summarizes lower-grain data into higher-grain outputs. For example, order line items may be aggregated into daily revenue by product category.
@@ -289,6 +296,76 @@ One possible local architecture:
 
 The staging layer should keep the same grain as the raw trade feed: one row per trade. The hourly table deliberately changes the grain by aggregating trades into hourly OHLCV records.
 
+**Runnable with adaptation.** This model declares its grain in the comment,
+deduplicates the composite trade key deterministically, and limits an
+incremental run to a bounded lookback. The exact incremental macro varies by
+dbt adapter, but the boundary should remain explicit.
+
+Listing: Deduplicated trade staging model. \label{lst:sec04-deduplicate-trades}
+
+```sql
+-- Grain: one row per (exchange_name, asset_symbol, source_trade_id).
+WITH ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY exchange_name, asset_symbol, source_trade_id
+            ORDER BY ingested_at DESC, event_timestamp DESC
+        ) AS row_rank
+    FROM {{ ref('curated_trades') }}
+    {% if is_incremental() %}
+    WHERE event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '3 days'
+    {% endif %}
+)
+SELECT
+    exchange_name,
+    asset_symbol,
+    source_trade_id,
+    event_timestamp,
+    ingested_at,
+    CAST(price AS DECIMAL(20, 8)) AS price,
+    CAST(quantity AS DECIMAL(20, 8)) AS quantity
+FROM ranked
+WHERE row_rank = 1;
+```
+
+The destination must merge or replace the same lookback partitions
+idempotently. A three-day interval is an example policy, not a universal
+default.
+
+**Illustrative.** A windowed aggregate keeps a short event-time lookback open
+for corrections, then marks an hour final only after the allowed-lateness
+boundary. Streaming engines express this with different syntax; the policy is
+the portable idea.
+
+Listing: Hourly OHLCV with late-data lookback. \label{lst:sec04-hourly-ohlcv}
+
+```sql
+WITH candidate_hours AS (
+    SELECT *
+    FROM stg_trades
+    WHERE event_timestamp >= :run_hour_utc - INTERVAL '3 hours'
+      AND event_timestamp < :run_hour_utc + INTERVAL '1 hour'
+),
+bars AS (
+    SELECT
+        exchange_name,
+        asset_symbol,
+        date_trunc('hour', event_timestamp) AS hour_start_utc,
+        arg_min(price, (event_timestamp, source_trade_id)) AS open_price,
+        max(price) AS high_price,
+        min(price) AS low_price,
+        arg_max(price, (event_timestamp, source_trade_id)) AS close_price,
+        sum(quantity) AS total_quantity,
+        count(*) AS trade_count
+    FROM candidate_hours
+    GROUP BY 1, 2, 3
+)
+SELECT *,
+       hour_start_utc < :watermark_utc - INTERVAL '15 minutes' AS is_final
+FROM bars;
+```
+
 Example aggregation in DuckDB-style SQL:
 
 ```sql
@@ -329,6 +406,16 @@ At the end of this stage, the project should expose:
 - version-controlled model definitions and a declared event-time lookback policy for late data.
 
 Section 6 consumes these models as data products. Its checks should compare raw, accepted, quarantined, and deduplicated counts using the declared grains; it should not expect the hourly aggregate's row count to equal the trade fact's row count.
+
+The capstone handoff is `curated_trades → stg_trades → fct_trades →
+fct_hourly_ohlcv`. The first three remain one row per unique trade; the final
+model is one row per exchange, asset, and UTC hour. Section 5 schedules this
+lookback-aware work, and Section 6 validates its counts and finalization rule.
+
+**Common beginner mistakes.** Leaving grain implicit, joining two fact tables
+directly, full-refreshing a growing history by default, and rewriting every
+partition when one late event arrives can all produce plausible but expensive
+or inflated results.
 
 ## Transformation and Processing Checklist
 

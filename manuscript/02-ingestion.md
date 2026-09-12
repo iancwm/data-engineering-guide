@@ -68,6 +68,13 @@ The delivery-semantics figure places those guarantees in an operational context,
 
 [[REPORTKIT-VISUAL:fig:sec02-ingestion-semantics]]
 
+The table names the guarantees; the retry sequence makes the failure boundary
+visible. A lost acknowledgement can cause the producer to send an event again
+even when the sink already committed it. The duplicate is harmless only when
+the logical key and sink write are designed for that retry.
+
+[[REPORTKIT-VISUAL:fig:sec02-delivery-retry-dedup]]
+
 ## Idempotency
 
 An ingestion process is idempotent if running it multiple times with the same input produces the same final result. Idempotency matters because pipelines fail, retries happen, and backfills are common.
@@ -98,6 +105,12 @@ A robust design can respond in several ways:
 - alert operators before lag becomes unrecoverable.
 
 Message brokers such as Kafka, Redpanda, Kinesis, and Pulsar are often used as durable buffers. They decouple producers from consumers, retain events for replay, and allow downstream systems to consume at their own pace. They do not remove the need for capacity planning; they make overload visible and survivable.
+
+The important signal is queue depth or consumer lag. In the capstone, a
+temporary broker backlog is acceptable when the broker retains events and the
+consumer can catch up before the replay window or freshness target is lost.
+
+[[REPORTKIT-VISUAL:fig:sec02-backpressure]]
 
 ## Change Data Capture and Query-Based Extraction
 
@@ -151,6 +164,13 @@ Data engineers handle late data with:
 - clear freshness expectations for consumers.
 
 Late data policy should be explicit. A dashboard may show preliminary numbers quickly and finalize them later. A financial reporting process may wait for reconciliation before publishing. A machine learning feature pipeline may need point-in-time correctness to avoid leakage.
+
+The event-time timeline below separates when a trade happened from when the
+consumer received it. The watermark says how far the pipeline believes a
+window has progressed; an allowed-lateness policy says whether a late event can
+still revise that window or must be quarantined for reconciliation.
+
+[[REPORTKIT-VISUAL:fig:sec02-event-time-watermark]]
 
 ## Ingestion Tooling Landscape
 
@@ -211,6 +231,79 @@ One possible architecture:
 6. Quality checks: validate required fields, timestamp sanity, non-negative quantity, and duplicate trade identifiers.
 7. Recovery: test what happens when the consumer crashes, the broker restarts, or the sink is temporarily unavailable.
 
+**Runnable with adaptation.** The following producer skeleton shows the
+responsibility boundary without pretending that one library's WebSocket API is
+universal. It preserves the source payload, assigns the capstone envelope, and
+reconnects with bounded backoff; the consumer remains responsible for durable
+batch writes and offset commits.
+
+Listing: WebSocket producer with bounded reconnect. \label{lst:sec02-websocket-producer}
+
+```python
+import json
+import time
+from datetime import datetime, timezone
+
+
+def envelope(raw: dict, received_at: datetime) -> dict:
+    return {
+        "event_id": f"binance:BTCUSDT:{raw['t']}",
+        "source_trade_id": raw["t"],
+        "exchange_name": "binance",
+        "asset_symbol": "BTCUSDT",
+        "source_timestamp": raw["T"],
+        "event_timestamp": datetime.fromtimestamp(
+            raw["T"] / 1000, tz=timezone.utc
+        ).isoformat(),
+        "ingested_at": received_at.isoformat(),
+        "schema_version": 1,
+        "raw_payload": raw,
+    }
+
+
+def run_forever(connect, publish, log, max_retries=8):
+    retries = 0
+    while True:
+        try:
+            with connect("btcusdt@trade") as stream:
+                retries = 0
+                for message in stream:
+                    received_at = datetime.now(timezone.utc)
+                    event = envelope(json.loads(message), received_at)
+                    publish("raw_crypto_trades", event)
+                    log("published", event_id=event["event_id"])
+        except (TimeoutError, ConnectionError) as exc:
+            retries += 1
+            if retries > max_retries:
+                raise
+            delay = min(60, 2 ** retries)
+            log("reconnecting", error=str(exc), delay_seconds=delay)
+            time.sleep(delay)
+```
+
+The `publish` operation should be paired with broker retention and a consumer
+that commits offsets only after its file and manifest writes are durable.
+
+**Illustrative.** This is the smallest raw event envelope that keeps event
+semantics separate from sink timing. `landed_at` belongs to the manifest or
+file record, because it describes durable publication rather than when the
+exchange trade occurred.
+
+Listing: Raw trade event envelope. \label{lst:sec02-raw-event-envelope}
+
+```json
+{
+  "event_id": "binance:BTCUSDT:481516234",
+  "schema_version": 1,
+  "source_trade_id": 481516234,
+  "event_timestamp": "2026-09-07T02:14:05.123Z",
+  "source_timestamp": 1788747245123,
+  "ingested_at": "2026-09-07T02:14:05.241Z",
+  "raw_payload": {"symbol": "BTCUSDT", "price": "62000.10", "qty": "0.001"},
+  "manifest": {"batch_id": "20260907T0214-0007", "landed_at": "pending"}
+}
+```
+
 The raw landing is append-only: a retry should not overwrite an earlier raw event file. The manifest makes file publication idempotent by associating a deterministic `batch_id` with the broker offset range and output path. A crash after the file write but before the offset commit may still cause redelivery, so the consumer must detect an already-recorded batch and the downstream table must deduplicate by the logical trade key. Commit broker offsets only after the file and its manifest entry are durable.
 
 This project teaches the core ingestion questions:
@@ -232,6 +325,15 @@ At the end of this stage, the project should have four explicit outputs:
 - a replay procedure that can rebuild a bounded event-time interval from retained broker data or raw files.
 
 Section 3 treats the raw landing and manifest as its inputs. It should not need to reconnect to the exchange to reconstruct an already landed event. Storage will organize these files into a queryable `curated_trades` table while preserving the same event-time, UTC, and trade-key conventions.
+
+The Section 3 handoff is therefore `source → producer → broker → raw_trades +
+manifest`. Storage consumes the raw landing and manifest; it does not silently
+start a second read from the exchange.
+
+**Common beginner mistakes.** Committing an offset before the durable file
+exists, using arrival time as event time, assuming exactly-once behavior across
+uncoordinated systems, and dropping malformed events without an error code or
+quarantine path all make later reconciliation impossible.
 
 Be cautious with the phrase "order book" for this project. Trade ticks are simpler than full order book reconstruction. A true order book project requires ingesting snapshots and incremental depth updates, then applying sequence numbers correctly. That is a valuable advanced extension, but it should not be confused with basic trade ingestion.
 

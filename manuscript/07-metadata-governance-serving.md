@@ -22,7 +22,8 @@ Catalogs fail when they become stale documentation. They work best when integrat
 
 A useful catalog contains both technical metadata and business metadata. The metadata table shows the kinds of context a reader should expect to find together.
 
-Table: Metadata types and examples. \label{tbl:metadata-types}
+::: {#tbl:metadata-types}
+Table: Metadata types and examples.
 
 | Metadata type | Examples |
 | --- | --- |
@@ -30,6 +31,7 @@ Table: Metadata types and examples. \label{tbl:metadata-types}
 | Operational metadata | owners, job status, test results, freshness, incident history |
 | Business metadata | descriptions, glossary terms, metric definitions, certified datasets |
 | Governance metadata | sensitivity classification, access policy, retention rule, approved use |
+:::
 
 ## Lineage
 
@@ -97,7 +99,8 @@ testable without tying the guide to one schema registry. It names the grain,
 units, freshness, classification, and compatibility rule that consumers need
 to plan around.
 
-Listing: Versioned curated-trades data contract. \label{lst:sec07-data-contract}
+::: {#lst:sec07-data-contract}
+Listing: Versioned curated-trades data contract.
 
 ```yaml
 name: curated_trades
@@ -124,6 +127,7 @@ change_policy:
   breaking_change: version the contract and provide a migration window
   owner_notice: required before deployment
 ```
+:::
 
 The contract does not replace quality checks. It gives those checks, the
 producer, and the consumer a shared place to state what should be true.
@@ -149,7 +153,8 @@ Security and compliance are discussed further in Section 8, but they are not sep
 
 The governance-tooling table maps common policy and discovery responsibilities to representative choices.
 
-Table: Governance and metadata tooling categories. \label{tbl:governance-tooling}
+::: {#tbl:governance-tooling}
+Table: Governance and metadata tooling categories.
 
 | Tool category | Purpose | Examples |
 | --- | --- | --- |
@@ -158,6 +163,7 @@ Table: Governance and metadata tooling categories. \label{tbl:governance-tooling
 | Policy and access control | Govern permissions and sensitive fields | Unity Catalog, Lake Formation, Apache Ranger, cloud IAM |
 | Contract and schema tools | Manage producer-consumer expectations | schema registries, event schemas, contract tests |
 | Glossary and metric layers | Standardize business meaning | semantic layers, BI metric stores, catalog glossaries |
+:::
 
 ## Serving Data for Analytics, Machine Learning, and Applications
 

@@ -15,8 +15,8 @@
   \terminalstateat{skipped}{8.5}{-2.1}{Skipped}
   \transition{scheduled}{running}{}
   \transition{running}{succeeded}{}
-  \transition[route={bend left=15}]{running.north}{retrying.south}{retry}
-  \transition[route={bend right=15}]{retrying.south}{running.north}{}
+  \transition[route={bend left=25},label-position=above]{running.north}{retrying.south}{retry}
+  \transition[route={bend left=35}]{retrying.south}{running.north}{}
   \transition[route={bend right=12},label-position=below]{running}{failed}{deterministic error}
   \transition[route={bend right=12},label-position=below]{running}{skipped}{skip}
 \end{reportstate}

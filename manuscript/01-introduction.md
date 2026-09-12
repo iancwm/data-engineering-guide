@@ -54,7 +54,8 @@ The lifecycle is not always linear. A machine learning system may send predictio
 
 The lifecycle overview table below is a high-level map. The later sections return to each stage in more detail, including implementation choices and failure modes.
 
-Table: Lifecycle overview: stages, decisions, and representative tools. \label{tbl:lifecycle-overview}
+::: {#tbl:lifecycle-overview}
+Table: Lifecycle overview: stages, decisions, and representative tools.
 
 | Stage | Main purpose | Key terms | Common tools and technologies |
 | --- | --- | --- | --- |
@@ -69,6 +70,7 @@ Table: Lifecycle overview: stages, decisions, and representative tools. \label{t
 | Serving | Deliver data to consumers | BI mart, feature store, API, reverse ETL, search index, cache, OLAP cube | Tableau, Power BI, Looker, Superset, Feast, Tecton, Elasticsearch, Redis, Postgres, Census, Hightouch |
 | Observability and operations | Run the platform reliably | logs, metrics, traces, SLA, SLO, alert, runbook, cost monitoring | CloudWatch, Prometheus, Grafana, Datadog, OpenTelemetry, ELK, platform-native monitoring |
 | Security and compliance | Protect data and satisfy obligations | IAM, encryption, masking, tokenization, PII, audit log, least privilege | cloud IAM, Vault, KMS, Ranger, Lake Formation, Unity Catalog, row-level and column-level security |
+:::
 
 This table is deliberately broad. In a small project, one Python script and a Postgres database may cover several stages. In a large financial, healthcare, or internet-scale company, each row may involve multiple teams and specialized platforms.
 
@@ -261,7 +263,8 @@ In small organizations, one person may do all of this. In larger organizations, 
 
 The role-comparison table distinguishes the questions and outputs owned by adjacent disciplines.
 
-Table: Data engineering compared with related roles. \label{tbl:related-roles}
+::: {#tbl:related-roles}
+Table: Data engineering compared with related roles.
 
 | Role | Main question | Typical output |
 | --- | --- | --- |
@@ -271,6 +274,7 @@ Table: Data engineering compared with related roles. \label{tbl:related-roles}
 | Data scientist | What can we predict, optimize, or infer? | Models, experiments, statistical analysis |
 | Machine learning engineer | How do we deploy and operate models? | Model services, feature pipelines, monitoring |
 | Database administrator | How do we keep databases performant and available? | Database tuning, backups, access management |
+:::
 
 These boundaries are not rigid. The same team may own several of these responsibilities. What matters is the flow of work: raw data must become trusted data before it can support high-quality analysis or automation.
 

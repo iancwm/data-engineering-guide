@@ -32,7 +32,8 @@ A strong beginner-to-intermediate project is a complete analytics pipeline:
 **Illustrative.** A small repository can make the lifecycle visible without
 committing to one orchestrator or cloud provider:
 
-Listing: Minimal capstone repository tree. \label{lst:sec09-capstone-repo-tree}
+::: {#lst:sec09-capstone-repo-tree}
+Listing: Minimal capstone repository tree.
 
 ```text
 crypto-lakehouse/
@@ -45,6 +46,7 @@ crypto-lakehouse/
 |-- config.example.yml
 `-- README.md
 ```
+:::
 
 The tree is a thinking aid, not a required framework layout. Secrets belong in
 the runtime's secret store or an ignored local file, never in the repository.

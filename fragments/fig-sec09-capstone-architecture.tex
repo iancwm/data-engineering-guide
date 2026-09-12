@@ -4,20 +4,22 @@
   label={fig:sec09-capstone-architecture},
   caption={The cumulative capstone architecture connects a public market stream to named durable assets, model grains, quality and replay controls, and consumer contracts.},
   source={Author's synthesis.},
-  description={Four lanes distinguish the data path, control path, trust boundary, and consumers. Data flows from a public BTCUSDT stream through a producer and broker to raw trades and a manifest, curated trades, and hourly OHLCV. Scheduling and replay control the run; tests and quarantine control publication; a contract and owner support dashboard, model, and report consumers.}
+  description={Four lanes distinguish the data path, control path, trust boundary, and consumers. Data flows from a public BTCUSDT stream through a producer/broker to the raw\_trades and manifest artifacts, then to curated\_trades and catalog, then to the stg/fct/OHLCV models. Scheduling and replay control the run; tests and quarantine control publication; a contract and owner support dashboard, model, and report consumers.}
 ]
-\begin{reportswimlane}[lanes={Data path,Control path,Trust boundary,Consumers},lane spacing=1.45,width=12.2]
+\begin{reportswimlane}[lanes={Data path,Control path,Trust boundary,Consumers},lane spacing=1.45,width=14.7,columns=6]
   \lanestep{source}{Data path}{BTCUSDT stream}{1}
-  \lanestep{raw}{Data path}{producer and broker}{2}
-  \lanestep{curated}{Data path}{curated trades}{3}
-  \lanestep{hourly}{Data path}{hourly OHLCV}{4}
-  \lanestep{serve}{Consumers}{dashboard model report}{5}
+  \lanestep{producer}{Data path}{producer/broker}{2}
+  \lanestep{raw}{Data path}{raw\_trades + manifest}{3}
+  \lanestep{curated}{Data path}{curated\_trades + catalog}{4}
+  \lanestep{hourly}{Data path}{stg/fct/OHLCV}{5}
+  \lanestep{serve}{Consumers}{dashboard model report}{6}
   \lanestep{schedule}{Control path}{schedule retry replay}{2}
-  \lanestep{publish}{Control path}{backfill interval publish}{4}
-  \lanestep{quality}{Trust boundary}{tests freshness alerts}{3}
-  \lanestep{quarantine}{Trust boundary}{quarantine runbook}{4}
-  \lanestep{contract}{Trust boundary}{contract owner promise}{5}
-  \laneflow{source}{raw}
+  \lanestep{publish}{Control path}{backfill interval publish}{5}
+  \lanestep{quality}{Trust boundary}{tests freshness alerts}{4}
+  \lanestep{quarantine}{Trust boundary}{quarantine runbook}{5}
+  \lanestep{contract}{Trust boundary}{contract owner promise}{6}
+  \laneflow{source}{producer}
+  \laneflow{producer}{raw}
   \laneflow{raw}{curated}
   \laneflow{curated}{hourly}
   \laneflow{hourly}{serve}

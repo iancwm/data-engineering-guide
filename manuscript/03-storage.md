@@ -29,12 +29,14 @@ OLTP means online transaction processing. These systems support live application
 
 OLAP means online analytical processing. These systems support analysis: scanning large histories, joining datasets, calculating aggregates, building dashboards, and training models. They are optimized for large read-heavy queries, compression, columnar execution, and parallel processing. The workload table contrasts the access patterns that drive the storage choice.
 
-Table: OLTP and OLAP workloads. \label{tbl:oltp-olap}
+::: {#tbl:oltp-olap}
+Table: OLTP and OLAP workloads.
 
 | Workload | Optimized for | Common systems | Example query |
 | --- | --- | --- | --- |
 | OLTP | Small reads and writes, transactions, application latency | PostgreSQL, MySQL, SQL Server, Oracle, DynamoDB, MongoDB | Update one customer order |
 | OLAP | Large scans, joins, aggregates, analytical latency | Snowflake, BigQuery, Redshift, Databricks SQL, ClickHouse, DuckDB | Calculate revenue by region for three years |
+:::
 
 Data engineers often extract from OLTP systems and load into OLAP systems. This protects application databases from heavy analytical queries and allows analytical storage to preserve history, denormalize data, and optimize for reporting or machine learning.
 
@@ -46,12 +48,14 @@ Row-oriented systems store values for the same record together. This is efficien
 
 Columnar systems store values from the same column together. This is efficient when a query reads only a few columns across many rows, such as calculating average price, total volume, or monthly revenue. Analytical engines can skip unused columns, compress similar values efficiently, and perform vectorized operations. The layout table compares row-oriented and columnar storage on the dimensions that matter for this choice.
 
-Table: Row-oriented and columnar storage layouts. \label{tbl:storage-layouts}
+::: {#tbl:storage-layouts}
+Table: Row-oriented and columnar storage layouts.
 
 | Layout | Strengths | Weaknesses | Best fit |
 | --- | --- | --- | --- |
 | Row-oriented | Fast point reads and writes; good for transactions | Inefficient for large analytical scans over few columns | OLTP applications |
 | Columnar | Efficient scans, compression, and aggregation | Less natural for high-frequency single-row updates | Warehouses, data lakes, analytics |
+:::
 
 For example, a query such as:
 
@@ -146,7 +150,8 @@ Parquet files from the transactional table metadata around them. Exact syntax
 varies by engine and table format; the durable design decisions are the schema,
 UTC partition, logical key, and table location.
 
-Listing: Curated table definition over trade files. \label{lst:sec03-table-definition}
+::: {#lst:sec03-table-definition}
+Listing: Curated table definition over trade files.
 
 ```sql
 CREATE TABLE curated_trades (
@@ -163,6 +168,7 @@ USING ICEBERG                 -- or the equivalent Delta table command
 PARTITIONED BY (days(event_timestamp), hours(event_timestamp))
 LOCATION 's3://crypto-lake/curated/trades';
 ```
+:::
 
 The table format can make commits and snapshots atomic, but it does not infer
 that two rows with the same composite trade key are duplicates. The model still
@@ -174,7 +180,8 @@ It is also important not to overstate idempotency. Delta, Iceberg, and Hudi prov
 
 File format affects performance, schema handling, and interoperability. The file-format table summarizes the practical trade-offs among common interchange and analytical formats.
 
-Table: File formats and their engineering trade-offs. \label{tbl:file-formats}
+::: {#tbl:file-formats}
+Table: File formats and their engineering trade-offs.
 
 | Format | Strengths | Weaknesses | Common use |
 | --- | --- | --- | --- |
@@ -183,6 +190,7 @@ Table: File formats and their engineering trade-offs. \label{tbl:file-formats}
 | Avro | Compact, schema-aware, good for row events | Less convenient for ad hoc analytics | Kafka and event serialization |
 | Parquet | Columnar, compressed, efficient for analytics | Less suitable for frequent tiny writes | Data lakes, warehouses, lakehouses |
 | ORC | Columnar, compressed, efficient scans | Less common outside some ecosystems | Hadoop/Hive-style analytics |
+:::
 
 For analytical storage, Parquet is often the default choice because it is columnar, compressed, widely supported, and works well with Spark, DuckDB, Trino, Snowflake external tables, BigQuery external tables, and lakehouse formats.
 
@@ -208,7 +216,8 @@ concrete by filtering the same UTC event-time columns used to derive the
 object-store URI when the relevant DuckDB extension and credentials are
 configured.
 
-Listing: Partition-pruned Parquet query. \label{lst:sec03-parquet-partition-query}
+::: {#lst:sec03-parquet-partition-query}
+Listing: Partition-pruned Parquet query.
 
 ```sql
 SELECT
@@ -222,6 +231,7 @@ FROM read_parquet('data/raw/trades/**/*.parquet', hive_partitioning = true)
 WHERE event_timestamp >= TIMESTAMP '2026-09-07 02:00:00+00'
   AND event_timestamp < TIMESTAMP '2026-09-07 03:00:00+00';
 ```
+:::
 
 The predicate is useful only when it matches the layout and statistics the
 engine can inspect; partitioning is not a substitute for measuring the query
@@ -272,7 +282,8 @@ The catalog is often the difference between a pile of files and a usable data pl
 
 The storage-tooling table maps each physical or logical layer to representative choices.
 
-Table: Storage layers and representative tools. \label{tbl:storage-tooling}
+::: {#tbl:storage-tooling}
+Table: Storage layers and representative tools.
 
 | Layer | Purpose | Examples |
 | --- | --- | --- |
@@ -284,6 +295,7 @@ Table: Storage layers and representative tools. \label{tbl:storage-tooling}
 | Query engines | SQL over files, tables, or warehouses | Spark, Trino, Presto, DuckDB, ClickHouse |
 | Catalogs | Table metadata and discovery | Hive Metastore, Glue, Unity Catalog, DataHub, OpenMetadata |
 | Local development | Laptop-scale prototyping | DuckDB, MinIO, local Parquet, Docker |
+:::
 
 DuckDB is particularly useful for local data engineering because it can query local Parquet files and, with extensions and configuration, object storage. MinIO is useful because it provides an S3-compatible object store for local testing. Together, they let a developer prototype lake-style workflows without immediately relying on cloud infrastructure.
 
@@ -291,7 +303,8 @@ DuckDB is particularly useful for local data engineering because it can query lo
 
 The storage-choice table maps common needs to a likely starting point; it is a decision aid, not a product prescription.
 
-Table: Storage needs and likely choices. \label{tbl:storage-choices}
+::: {#tbl:storage-choices}
+Table: Storage needs and likely choices.
 
 | Need | Likely storage choice |
 | --- | --- |
@@ -303,6 +316,7 @@ Table: Storage needs and likely choices. \label{tbl:storage-choices}
 | Search over documents or logs | Search index |
 | Low-latency application reads | Serving database, cache, or key-value store |
 | Local analytical prototyping | DuckDB with local Parquet |
+:::
 
 There is rarely one perfect storage system. Most mature architectures use several, with each serving a clear purpose. The key is to avoid accidental architecture: do not use an operational database as a warehouse, a raw object store as a governed semantic layer, or a cache as a system of record.
 

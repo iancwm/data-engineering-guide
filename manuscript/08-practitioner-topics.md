@@ -89,7 +89,8 @@ operating model changes.
 
 Architecture patterns are useful vocabulary for discussing trade-offs, not templates to copy. They operate at different levels and can be combined: Lambda and Kappa describe processing paths, medallion describes data organization, and data mesh describes an organizational model. The pattern-comparison table keeps the choice tied to a workload and its main risk.
 
-Table: Data architecture patterns and trade-offs. \label{tbl:architecture-patterns}
+::: {#tbl:architecture-patterns}
+Table: Data architecture patterns and trade-offs.
 
 | Pattern | Useful when | Main cost or risk |
 | --- | --- | --- |
@@ -97,6 +98,7 @@ Table: Data architecture patterns and trade-offs. \label{tbl:architecture-patter
 | Kappa | Durable, replayable events are the primary source of truth and consumers can rebuild state | Replay depends on event quality, retention, and an affordable way to reprocess history |
 | Medallion | A lakehouse needs recognizable raw, refined, and curated boundaries | Layer names do not define semantics; uncontrolled copies can create confusion and storage cost |
 | Data mesh | Multiple domains need ownership of data products while a platform supplies shared capabilities | It requires strong contracts, discoverability, and federated standards; decentralization alone does not create quality |
+:::
 
 Choose a pattern only after stating the workload, failure model, ownership model, and expected change. A straightforward batch pipeline is often a better starting point than a dual-path architecture. A streaming architecture is justified by a real latency or event-replay requirement, not by the presence of a message broker in a diagram.
 
@@ -181,7 +183,8 @@ Most learners can build a complete, credible batch pipeline without adopting a d
 
 Learn and add capability in this order. The learning-order table makes the recommended progression explicit and names what to defer until the current limitation is measured.
 
-Table: Learning stages and capabilities to defer. \label{tbl:learning-order}
+::: {#tbl:learning-order}
+Table: Learning stages and capabilities to defer.
 
 | Stage | Learn or use | Defer until there is evidence of need |
 | --- | --- | --- |
@@ -192,6 +195,7 @@ Table: Learning stages and capabilities to defer. \label{tbl:learning-order}
 | 5. Scale and latency | Partitioning, query plans, object-store layout, and workload measurement | Spark, Flink, or a broker until single-node limits or latency targets require them |
 | 6. Platform concerns | Cloud IAM, secrets, cataloging, lineage, retention, and cost controls | Enterprise governance products before the ownership and policy needs are clear |
 | 7. Streaming | Events, offsets, replay, watermarking, and a Kafka-compatible broker or cloud service | A second streaming engine unless the workload needs its distinct processing model |
+:::
 
 When choosing the next tool, write down the limitation it resolves. "The current job cannot meet a measured latency target" is a reason to consider streaming; "this tool is popular" is not. Learning one complete stack end to end builds more judgment than sampling several products without operating any of them.
 

@@ -8,12 +8,14 @@ This is often the most intellectually demanding part of data engineering because
 
 ETL stands for extract, transform, load. Data is transformed before it enters the target analytical system. ELT stands for extract, load, transform. Data is loaded first and transformed inside the warehouse, lakehouse, or processing engine. The ETL-versus-ELT table compares where the work happens and why a team might choose each pattern.
 
-Table: ETL and ELT patterns. \label{tbl:etl-elt}
+::: {#tbl:etl-elt}
+Table: ETL and ELT patterns.
 
 | Pattern | Description | Common use |
 | --- | --- | --- |
 | ETL | Transform before loading into the target platform | Strict preprocessing, legacy systems, sensitive data filtering, non-SQL workloads |
 | ELT | Load raw data first, then transform inside the analytical platform | Cloud warehouses, lakehouses, SQL-centric analytics |
+:::
 
 ELT is common in modern platforms because storage is relatively cheap, compute is elastic, and analytical engines are powerful. Keeping raw data also supports reprocessing when business logic changes. If a metric definition changes, the team can rerun transformation logic against preserved raw data instead of going back to the source system.
 
@@ -89,7 +91,8 @@ Streaming introduces challenges:
 
 "Real-time" is often used loosely. Many business needs are actually near real-time. A fraud decision may need milliseconds. A support dashboard may need one-minute freshness. An executive dashboard may be fine with hourly updates. The latency table gives the terms a practical range rather than treating them as guarantees.
 
-Table: Processing latency terms and typical ranges. \label{tbl:processing-latency}
+::: {#tbl:processing-latency}
+Table: Processing latency terms and typical ranges.
 
 | Requirement | Typical meaning |
 | --- | --- |
@@ -97,6 +100,7 @@ Table: Processing latency terms and typical ranges. \label{tbl:processing-latenc
 | Near real-time | Seconds to minutes |
 | Frequent batch | Minutes to hours |
 | Periodic batch | Daily or longer |
+:::
 
 Lower latency usually increases complexity and cost. The right design meets the real business need, not the most impressive technical target.
 
@@ -187,7 +191,8 @@ Data modeling structures data for use. Common modeling styles include normalized
 
 Dimensional modeling is especially common in analytics. It separates facts, which represent business events or measurements, from dimensions, which describe entities. The dimensional-model table defines the building blocks used in the examples that follow.
 
-Table: Dimensional-model elements. \label{tbl:dimensional-model-elements}
+::: {#tbl:dimensional-model-elements}
+Table: Dimensional-model elements.
 
 | Model element | Description | Example |
 | --- | --- | --- |
@@ -195,6 +200,7 @@ Table: Dimensional-model elements. \label{tbl:dimensional-model-elements}
 | Dimension table | Descriptive context | customer, product, date, region |
 | Grain | Meaning of one row | one row per order line |
 | Measure | Numeric value to aggregate | revenue, quantity, duration |
+:::
 
 Fact tables are usually long and relatively narrow. They contain event keys, foreign keys, timestamps, and measures such as price, quantity, duration, balance, or revenue.
 
@@ -216,13 +222,15 @@ Good models make common questions easy and uncommon questions possible.
 
 Dimension attributes change. A customer moves country, a product changes category, a security changes classification, or an account changes relationship manager. Slowly changing dimension techniques define how much history to preserve. The slowly-changing-dimension table compares the common history policies.
 
-Table: Slowly changing dimension types. \label{tbl:slowly-changing-dimensions}
+::: {#tbl:slowly-changing-dimensions}
+Table: Slowly changing dimension types.
 
 | Type | Behavior | Use case |
 | --- | --- | --- |
 | Type 1 | Overwrite the old value | Current-state reporting where history is not needed |
 | Type 2 | Add a new row with validity dates | Point-in-time analysis and historical reporting |
 | Type 3 | Add a previous-value column | Limited history for a small number of attributes |
+:::
 
 Type 2 dimensions are powerful because they allow point-in-time joins. A fact can join to the dimension row that was valid when the event occurred. This is critical when historical meaning matters, but it adds complexity to keys, joins, and tests.
 
@@ -230,7 +238,8 @@ Type 2 dimensions are powerful because they allow point-in-time joins. A fact ca
 
 Different tools fit different transformation workloads. The transformation-tooling table groups them by execution model and highlights the failure mode to watch.
 
-Table: Transformation tooling and operating trade-offs. \label{tbl:transformation-tooling}
+::: {#tbl:transformation-tooling}
+Table: Transformation tooling and operating trade-offs.
 
 | Tool | Best fit | Key ideas | Watch out for |
 | --- | --- | --- | --- |
@@ -241,6 +250,7 @@ Table: Transformation tooling and operating trade-offs. \label{tbl:transformatio
 | DuckDB | local analytical SQL and prototyping | in-process OLAP, Parquet, SQL | not a distributed production warehouse |
 | Polars | fast single-machine DataFrame processing | lazy plans, columnar execution, Rust engine | memory limits still matter |
 | SQL warehouses | governed ELT and analytics | SQL, optimization, access control | cost, warehouse-specific syntax, lock-in |
+:::
 
 dbt deserves special attention because it changed how many teams write transformations. Conceptually, dbt is a framework for managing SQL transformation code. A dbt model is usually a `SELECT` statement. dbt compiles that statement, resolves dependencies through `ref()` calls, runs models in dependency order, and supports tests and documentation.
 
@@ -301,7 +311,8 @@ deduplicates the composite trade key deterministically, and limits an
 incremental run to a bounded lookback. The exact incremental macro varies by
 dbt adapter, but the boundary should remain explicit.
 
-Listing: Deduplicated trade staging model. \label{lst:sec04-deduplicate-trades}
+::: {#lst:sec04-deduplicate-trades}
+Listing: Deduplicated trade staging model.
 
 ```sql
 -- Grain: one row per (exchange_name, asset_symbol, source_trade_id).
@@ -328,6 +339,7 @@ SELECT
 FROM ranked
 WHERE row_rank = 1;
 ```
+:::
 
 The destination must merge or replace the same lookback partitions
 idempotently. A three-day interval is an example policy, not a universal
@@ -338,7 +350,8 @@ for corrections, then marks an hour final only after the allowed-lateness
 boundary. Streaming engines express this with different syntax; the policy is
 the portable idea.
 
-Listing: Hourly OHLCV with late-data lookback. \label{lst:sec04-hourly-ohlcv}
+::: {#lst:sec04-hourly-ohlcv}
+Listing: Hourly OHLCV with late-data lookback.
 
 ```sql
 WITH candidate_hours AS (
@@ -365,6 +378,7 @@ SELECT *,
        hour_start_utc < :watermark_utc - INTERVAL '15 minutes' AS is_final
 FROM bars;
 ```
+:::
 
 Example aggregation in DuckDB-style SQL:
 

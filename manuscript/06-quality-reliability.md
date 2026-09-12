@@ -14,7 +14,8 @@ The quality-control figure places checks at the boundaries where each class of f
 
 The quality-dimensions table connects each expectation to a question and an executable check.
 
-Table: Data-quality dimensions and example tests. \label{tbl:quality-dimensions}
+::: {#tbl:quality-dimensions}
+Table: Data-quality dimensions and example tests.
 
 | Dimension | Question | Example test |
 | --- | --- | --- |
@@ -25,6 +26,7 @@ Table: Data-quality dimensions and example tests. \label{tbl:quality-dimensions}
 | Timeliness | Is data available when needed? | table refreshed by 08:00 |
 | Uniqueness | Are duplicates controlled? | primary key is unique |
 | Integrity | Are relationships valid? | every order has a customer |
+:::
 
 Quality is contextual. A dataset can be good enough for exploratory analysis but not acceptable for regulatory reporting.
 
@@ -70,7 +72,8 @@ Treat these checks as code. They should be version-controlled, reviewed, run aut
 
 Useful test categories include the following. The test-categories table shows how each category protects a different failure mode.
 
-Table: Data-quality test categories. \label{tbl:quality-test-categories}
+::: {#tbl:quality-test-categories}
+Table: Data-quality test categories.
 
 | Test type | Purpose | Example |
 | --- | --- | --- |
@@ -82,6 +85,7 @@ Table: Data-quality test categories. \label{tbl:quality-test-categories}
 | Freshness test | Protect timeliness | table updated within two hours |
 | Distribution test | Detect unusual behavior | volume is within historical range |
 | Business-rule test | Protect domain logic | cancelled orders should not contribute to recognized revenue |
+:::
 
 ## Shift-Left Quality
 
@@ -139,7 +143,8 @@ Post-incident reviews should ask:
 
 The quality-tooling table maps test and operational responsibilities to representative choices.
 
-Table: Quality and reliability tooling categories. \label{tbl:quality-tooling}
+::: {#tbl:quality-tooling}
+Table: Quality and reliability tooling categories.
 
 | Tool category | Purpose | Examples |
 | --- | --- | --- |
@@ -149,6 +154,7 @@ Table: Quality and reliability tooling categories. \label{tbl:quality-tooling}
 | Orchestrator alerts | Track job failures and lateness | Airflow, Dagster, Prefect, cloud schedulers |
 | Warehouse checks | Query data directly for assertions | SQL, stored procedures, scheduled queries |
 | Incident tools | Route and manage response | PagerDuty, Slack, Jira, ServiceNow |
+:::
 
 Tooling does not create trust by itself. Trust comes from meaningful checks, clear ownership, good runbooks, and a habit of learning from incidents.
 
@@ -193,7 +199,8 @@ basic business rules. A composite-key test macro or a concatenated surrogate
 test key is still needed for the three-column logical key; reconciliation and
 freshness belong in additional project-specific checks.
 
-Listing: Core dbt tests for trade models. \label{lst:sec06-dbt-tests}
+::: {#lst:sec06-dbt-tests}
+Listing: Core dbt tests for trade models.
 
 ```yaml
 version: 2
@@ -242,6 +249,7 @@ models:
           - expression_is_true:
               expression: "> 0"
 ```
+:::
 
 The test names are illustrative because dbt packages and custom macros differ.
 The important boundary is that a failing blocking test prevents publication and

@@ -19,7 +19,8 @@ Common ingestion methods include:
 - file ingestion, where data arrives in object storage or file transfer locations;
 - API ingestion, where data is pulled from service endpoints.
 
-Table: Extraction methods, strengths, and weaknesses. \label{tbl:extraction-methods}
+::: {#tbl:extraction-methods}
+Table: Extraction methods, strengths, and weaknesses.
 
 | Method | Strengths | Weaknesses |
 | --- | --- | --- |
@@ -29,6 +30,7 @@ Table: Extraction methods, strengths, and weaknesses. \label{tbl:extraction-meth
 | Event ingestion | Near real-time and scalable | Requires event design and duplicate handling |
 | File ingestion | Simple interface between systems | Files may be late, malformed, or duplicated |
 | API ingestion | Works with SaaS and external services | Rate limits, pagination, auth, schema drift |
+:::
 
 ## Batch and Streaming Ingestion
 
@@ -38,7 +40,8 @@ Batch ingestion reads data in bounded chunks at scheduled intervals, such as eve
 
 Streaming ingestion moves data continuously, either record by record or in micro-batches. It optimizes for freshness and event-driven use cases, such as fraud monitoring, market data, telemetry, personalization, and operational alerts. The trade-off is higher complexity. Streaming systems must handle long-running processes, network interruptions, duplicate events, out-of-order arrival, state management, and continuous compute cost. The batch-versus-streaming table maps common requirements to a proportionate fit.
 
-Table: Ingestion requirements and proportionate processing models. \label{tbl:batch-streaming-ingestion}
+::: {#tbl:batch-streaming-ingestion}
+Table: Ingestion requirements and proportionate processing models.
 
 | Requirement | Better fit | Reason |
 | --- | --- | --- |
@@ -47,6 +50,7 @@ Table: Ingestion requirements and proportionate processing models. \label{tbl:ba
 | Fraud detection or alerting | Streaming | Decisions depend on low latency |
 | Large historical reprocessing | Batch | Bounded data is easier to replay and audit |
 | IoT telemetry or market ticks | Streaming | High-frequency events arrive continuously |
+:::
 
 The practical question is not "batch or streaming?" but "what freshness does the consumer actually need?" Lower latency usually increases operational complexity. Many business cases described as real-time are adequately served by five-minute or hourly ingestion.
 
@@ -54,13 +58,15 @@ The practical question is not "batch or streaming?" but "what freshness does the
 
 When data moves across systems, failures are normal. Delivery semantics describe what happens when a message, record, or file is sent but the sender does not know whether the receiver processed it successfully. The delivery-semantics table makes the main loss, duplication, and complexity trade-offs explicit.
 
-Table: Delivery semantics, risks, and typical uses. \label{tbl:delivery-semantics}
+::: {#tbl:delivery-semantics}
+Table: Delivery semantics, risks, and typical uses.
 
 | Semantic | Meaning | Main risk | Typical use |
 | --- | --- | --- | --- |
 | At-most-once | Send once and do not retry | Data loss | Low-value telemetry where loss is acceptable |
 | At-least-once | Retry until acknowledged | Duplicates | Most robust ingestion and streaming systems |
 | Exactly-once processing | Process each logical record once despite retries | Complex assumptions | Systems with transactional sinks, offsets, and idempotent writes |
+:::
 
 "Exactly once" needs careful interpretation. True exactly-once delivery across heterogeneous systems is rarely something to assume. In practice, reliable systems usually combine at-least-once delivery with idempotent writes, transactional commits, deterministic keys, and offset tracking. The goal is not magic; it is making retries safe.
 
@@ -178,7 +184,8 @@ The ingestion-tooling table groups choices by responsibility rather than vendor 
 
 Tool choice depends on source type, volume, latency, reliability requirements, team capability, and cost. AI can help write implementation code, but architecture choices still need human judgment.
 
-Table: Ingestion tooling categories and operating trade-offs. \label{tbl:ingestion-tooling}
+::: {#tbl:ingestion-tooling}
+Table: Ingestion tooling categories and operating trade-offs.
 
 | Tool category | What it does | When to use | Main catch |
 | --- | --- | --- | --- |
@@ -187,6 +194,7 @@ Table: Ingestion tooling categories and operating trade-offs. \label{tbl:ingesti
 | Message brokers | Buffer and distribute event streams | Streaming, backpressure, multiple consumers, replay | Operational complexity and capacity planning |
 | CDC engines | Read database logs and emit changes | Near real-time database replication | Source-specific setup, schema evolution, delete handling |
 | File transfer and object storage | Land files for downstream processing | Partner feeds, batch exports, lake ingestion | Late files, malformed files, duplicate arrivals |
+:::
 
 Examples include Airbyte and Fivetran for connectors, Kafka and Redpanda for event streaming, Kinesis and Pub/Sub for cloud-native streams, Debezium for CDC, and Python or Go for custom ingestion services.
 
@@ -194,7 +202,8 @@ Examples include Airbyte and Fivetran for connectors, Kafka and Redpanda for eve
 
 Good portfolio projects need sources that reveal real ingestion problems, not just clean CSV loading. The practice-source table gives examples by ingestion style and the failure modes they expose.
 
-Table: Practice data sources grouped by ingestion style. \label{tbl:practice-data-sources}
+::: {#tbl:practice-data-sources}
+Table: Practice data sources grouped by ingestion style.
 
 | Ingestion style | Example sources | What they teach |
 | --- | --- | --- |
@@ -203,6 +212,7 @@ Table: Practice data sources grouped by ingestion style. \label{tbl:practice-dat
 | REST APIs | CoinGecko, Alpha Vantage, OpenWeatherMap, NASA APIs | pagination, rate limits, authentication, incremental pulls |
 | Public files | NYC Open Data, GTFS transit feeds, government datasets | batch ingestion, partitioning, file validation |
 | IoT and MQTT | ESP32 or Raspberry Pi sensors with Mosquitto | device telemetry, unreliable networks, small event payloads |
+:::
 
 For a finance-leaning portfolio, market data ingestion is useful because it naturally introduces freshness, volume, replay, and deduplication questions. For a public-sector or operations portfolio, transit, weather, or city-service datasets can be equally strong.
 
@@ -237,7 +247,8 @@ universal. It preserves the source payload, assigns the capstone envelope, and
 reconnects with bounded backoff; the consumer remains responsible for durable
 batch writes and offset commits.
 
-Listing: WebSocket producer with bounded reconnect. \label{lst:sec02-websocket-producer}
+::: {#lst:sec02-websocket-producer}
+Listing: WebSocket producer with bounded reconnect.
 
 ```python
 import json
@@ -280,6 +291,7 @@ def run_forever(connect, publish, log, max_retries=8):
             log("reconnecting", error=str(exc), delay_seconds=delay)
             time.sleep(delay)
 ```
+:::
 
 The `publish` operation should be paired with broker retention and a consumer
 that commits offsets only after its file and manifest writes are durable.
@@ -289,7 +301,8 @@ semantics separate from sink timing. `landed_at` belongs to the manifest or
 file record, because it describes durable publication rather than when the
 exchange trade occurred.
 
-Listing: Raw trade event envelope. \label{lst:sec02-raw-event-envelope}
+::: {#lst:sec02-raw-event-envelope}
+Listing: Raw trade event envelope.
 
 ```json
 {
@@ -303,6 +316,7 @@ Listing: Raw trade event envelope. \label{lst:sec02-raw-event-envelope}
   "manifest": {"batch_id": "20260907T0214-0007", "landed_at": "pending"}
 }
 ```
+:::
 
 The raw landing is append-only: a retry should not overwrite an earlier raw event file. The manifest makes file publication idempotent by associating a deterministic `batch_id` with the broker offset range and output path. A crash after the file write but before the offset commit may still cause redelivery, so the consumer must detect an already-recorded batch and the downstream table must deduplicate by the logical trade key. Commit broker offsets only after the file and its manifest entry are durable.
 

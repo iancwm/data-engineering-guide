@@ -70,7 +70,8 @@ The orchestration figure gives a compact dependency example; its edges describe 
 
 A schedule starts runs according to time. A trigger starts a run because something happened. The distinction matters because a clock tells you that an attempt should begin, while a data event can tell you that an input is available. The trigger table compares the common start conditions and the risk each one requires the operator to manage.
 
-Table: Workflow start conditions and operational risks. \label{tbl:workflow-start-conditions}
+::: {#tbl:workflow-start-conditions}
+Table: Workflow start conditions and operational risks.
 
 | Start condition | Example | Strength | Risk to manage |
 | --- | --- | --- | --- |
@@ -80,6 +81,7 @@ Table: Workflow start conditions and operational risks. \label{tbl:workflow-star
 | Sensor or poll | Check for a partition or API condition | Works with systems that emit no event | Polling can waste resources or wait forever |
 | Data-aware or asset trigger | Start when an upstream table is updated and validated | Expresses data dependencies | Requires trustworthy asset metadata and update events |
 | Manual or API trigger | An operator or deployment starts a run | Useful for repair and controlled releases | Easy to bypass normal parameters or checks |
+:::
 
 Schedules need an explicit timezone and a definition of the interval they cover. A job scheduled at 02:00 may represent the previous calendar day, and daylight-saving changes can make local-clock schedules ambiguous. Use UTC where practical, pass the data interval as a parameter, and document the boundary rules. A scheduled start time is not the same as a freshness guarantee; the source, task runtime, and downstream checks determine when data is actually usable.
 
@@ -228,7 +230,8 @@ This approach can reduce unnecessary polling and make dependencies match the dat
 
 Choose an orchestrator according to workflow shape, deployment model, team skills, and operational constraints. The names below describe common fits rather than hard boundaries. The orchestration-tooling table is a starting map, not a ranking.
 
-Table: Orchestration tools and common fits. \label{tbl:orchestration-tooling}
+::: {#tbl:orchestration-tooling}
+Table: Orchestration tools and common fits.
 
 | Tool or category | Typical fit | Important consideration |
 | --- | --- | --- |
@@ -238,6 +241,7 @@ Table: Orchestration tools and common fits. \label{tbl:orchestration-tooling}
 | Cloud schedulers | Managed jobs across a cloud provider's services | Lower infrastructure burden; provider coupling and service-specific limits |
 | Argo Workflows or Kubernetes operators | Containerized jobs and platform-native batch work | Useful for Kubernetes teams; cluster operations become part of the system |
 | dbt Cloud or a scheduler running dbt | Coordinating SQL model runs and tests | dbt performs transformations; it is not a general ingestion or storage system |
+:::
 
 The orchestrator should be the thinnest reliable control layer that meets the need. A small project may use a cloud scheduler or a single cron job with a robust script. A large platform may need a distributed scheduler, worker pools, asset metadata, and role-based operations. Using a more elaborate tool does not remove the need for clear task contracts and safe retries.
 
@@ -301,7 +305,8 @@ focused on intervals, retry policy, and dependencies. The transformation SQL
 remains in version-controlled models so it can be tested and rerun outside the
 orchestrator.
 
-Listing: Hourly capstone workflow definition. \label{lst:sec05-capstone-dag}
+::: {#lst:sec05-capstone-dag}
+Listing: Hourly capstone workflow definition.
 
 ```python
 from datetime import timedelta
@@ -338,6 +343,7 @@ with DAG(
 
     wait_for_raw >> build_models >> validate_and_publish
 ```
+:::
 
 In a real DAG, the callables receive the run's UTC data interval and publish
 only after the quality gate succeeds. The example's retry policy is for

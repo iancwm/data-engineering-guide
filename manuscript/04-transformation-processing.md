@@ -308,7 +308,10 @@ The staging layer should keep the same grain as the raw trade feed: one row per 
 
 **Runnable with adaptation.** This model declares its grain, deduplicates the
 trade key deterministically, and bounds each incremental run to an explicit
-lookback window.
+lookback window. The exact incremental macro varies by dbt adapter, but the
+boundary should remain explicit. The same logic is smoke-tested against a
+bounded fixture, translated from dbt Jinja to plain DuckDB SQL, in
+`companion/` at the root of this repository.
 
 ::: {#lst:sec04-deduplicate-trades}
 Listing: Deduplicated trade staging model.

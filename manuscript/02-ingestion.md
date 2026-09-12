@@ -70,14 +70,12 @@ Table: Delivery semantics, risks, and typical uses.
 
 "Exactly once" needs careful interpretation. True exactly-once delivery across heterogeneous systems is rarely something to assume. In practice, reliable systems usually combine at-least-once delivery with idempotent writes, transactional commits, deterministic keys, and offset tracking. The goal is not magic; it is making retries safe.
 
-The delivery-semantics figure places those guarantees in an operational context, showing why retries and idempotent sinks matter when a handoff is uncertain.
-
-[[REPORTKIT-VISUAL:fig:sec02-ingestion-semantics]]
-
-The table names the guarantees; the retry sequence makes the failure boundary
-visible. A lost acknowledgement can cause the producer to send an event again
-even when the sink already committed it. The duplicate is harmless only when
-the logical key and sink write are designed for that retry.
+The table names the guarantees; the retry sequence below makes the failure
+boundary visible, showing why retries and idempotent sinks matter when a
+handoff is uncertain. A lost acknowledgement can cause the producer to send
+an event again even when the sink already committed it. The duplicate is
+harmless only when the logical key and sink write are designed for that
+retry.
 
 [[REPORTKIT-VISUAL:fig:sec02-delivery-retry-dedup]]
 

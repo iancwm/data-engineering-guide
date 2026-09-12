@@ -1,13 +1,10 @@
 # Critique Remediation and Publication Hardening Specification
 
-**Status:** In progress on `claude/data-engineering-guide-spec-pqi0p2`,
-executed via `docs/superpowers/plans/2026-09-12-critique-remediation.md`.
-Tasks 1–7 of that plan's 10 tasks are complete (Task 7's fix loop resolved
-both reviewer Critical findings and the Important finding); Tasks 8–10 are
-in progress. See `docs/critique-remediation-progress-2026-09-12.md` for the
-full current analysis and `## 7. Outstanding items` below for a running
-summary — fold both into `docs/critique-remediation-implementation-log.md`
-once the plan's final task closes this spec out.
+**Status:** Implemented — see
+`docs/critique-remediation-implementation-log.md`. All 10 tasks of
+`docs/superpowers/plans/2026-09-12-critique-remediation.md` are complete;
+two consecutive clean `--profile release` builds pass and every acceptance
+criterion in `## 5` below has been re-verified.
 **Date:** 2026-09-12
 **Source:** `docs/ChatGPT_critique.md` and the follow-up decisions recorded in
 the working discussion
@@ -223,40 +220,13 @@ This specification does not authorize ReportKit repository changes, a complete
 production trading system, credentials or live endpoints, or a vendor-specific
 reference architecture.
 
-## 7. Outstanding items (as of 2026-09-12, mid-implementation)
+## 7. Closed out
 
-Full analysis backing this section lives in
-`docs/critique-remediation-progress-2026-09-12.md`; this is a running
-summary, updated as execution continues, and should be replaced by
-`docs/critique-remediation-implementation-log.md` when the plan's final
-task (Task 10) closes this spec out.
-
-**Done and independently reviewed clean or resolved:** §4 P0 "Establish a
-trustworthy release build" (both items); §4 P0 "Repair publication
-semantics" item 1 (caption-label fix) and item 3 (README fragment count,
-now tracking Task 5's removal too); §4 P1 visual remediation's retry-state
-collision fix, capstone-artifact-naming revision, and page-break item
-(Task 7, including its fix loop — see below).
-
-**Task 7's fix loop, resolved:** the page-break fix originally split
-`lst:sec04-hourly-ohlcv` and `lst:sec02-websocket-producer` into two
-listings each, which a dispatched reviewer found (a) made the SQL split's
-second half not independently-valid SQL (an undefined-relation reference to
-`candidate_hours`), and (b) raised the listing count from the plan's
-10-listing baseline to 12, against the plan's explicit "no net new visual
-count" Global Constraint. Both are resolved by redoing the fix so each
-listing keeps its original single `#lst:` id, now wrapping two fenced code
-blocks under one caption instead of two separately-captioned listings —
-Pandoc still gives each fenced block its own LaTeX box, so the page break
-still falls cleanly between them, and both listings are now framed
-explicitly as "one script shown in two boxes," removing the independent-
-validity claim. Listing count is back to 10. See
-`docs/critique-remediation-progress-2026-09-12.md` §2 and §5 for the full
-ruling and evidence.
-
-**Not yet started or in progress:** §4 P1 "Build and test one companion
-path"; §4 P2 "Prepare the quant-ready foundation"; §5's acceptance criteria
-have not been re-verified end-to-end as a final pass (Task 10); the
-implementation log itself (§6) does not yet exist as a final artifact —
-only this spec's inline annotations and the progress snapshot document
-stand in for it so far.
+All 10 tasks of `docs/superpowers/plans/2026-09-12-critique-remediation.md`
+are complete. This section previously tracked outstanding items during
+implementation; that running commentary, and the fuller analysis in
+`docs/critique-remediation-progress-2026-09-12.md`, is now superseded by
+`docs/critique-remediation-implementation-log.md`, which records the final
+per-task summary, the two-consecutive-clean-builds evidence, every §5
+acceptance criterion re-verified, local workarounds adopted, and issues
+deferred upstream to ReportKit.

@@ -1,12 +1,12 @@
 # Critique Remediation — Progress Snapshot (2026-09-12)
 
-**Status:** Temporary working document. This is not the spec and not the
-final implementation log — it persists the analysis accumulated while
-executing `docs/superpowers/plans/2026-09-12-critique-remediation.md`
-against `docs/critique-remediation-spec.md`, so that state survives even if
-execution is paused or resumed later. When the plan finishes, its content
-should be folded into the plan's Task 10 deliverable,
-`docs/critique-remediation-implementation-log.md`, and this file deleted.
+**Status:** Archived. The plan has finished — see
+`docs/critique-remediation-implementation-log.md` for the final, closed-out
+record. This document is kept (rather than deleted, its original intent)
+because the spec and other documents cross-reference its section numbers
+for the detailed reasoning behind the Task 7 fix-loop ruling; treat it as a
+frozen historical working log of that analysis, not a live-updated
+document.
 
 **Branch:** `feat/chatgpt-critique-remediation`
 **Plan:** `docs/superpowers/plans/2026-09-12-critique-remediation.md`

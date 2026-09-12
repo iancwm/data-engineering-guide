@@ -306,10 +306,9 @@ One possible local architecture:
 
 The staging layer should keep the same grain as the raw trade feed: one row per trade. The hourly table deliberately changes the grain by aggregating trades into hourly OHLCV records.
 
-**Runnable with adaptation.** This model declares its grain in the comment,
-deduplicates the composite trade key deterministically, and limits an
-incremental run to a bounded lookback. The exact incremental macro varies by
-dbt adapter, but the boundary should remain explicit.
+**Runnable with adaptation.** This model declares its grain, deduplicates the
+trade key deterministically, and bounds each incremental run to an explicit
+lookback window.
 
 ::: {#lst:sec04-deduplicate-trades}
 Listing: Deduplicated trade staging model.
@@ -345,13 +344,12 @@ The destination must merge or replace the same lookback partitions
 idempotently. A three-day interval is an example policy, not a universal
 default.
 
-**Illustrative.** A windowed aggregate keeps a short event-time lookback open
-for corrections, then marks an hour final only after the allowed-lateness
-boundary. Streaming engines express this with different syntax; the policy is
-the portable idea.
+**Illustrative.** A windowed aggregate keeps a short lookback open for late
+corrections, then finalizes an hour once the allowed-lateness boundary
+passes.
 
-::: {#lst:sec04-hourly-ohlcv}
-Listing: Hourly OHLCV with late-data lookback.
+::: {#lst:sec04-hourly-ohlcv-candidates}
+Listing: Hourly OHLCV late-data lookback window.
 
 ```sql
 WITH candidate_hours AS (
@@ -359,8 +357,19 @@ WITH candidate_hours AS (
     FROM stg_trades
     WHERE event_timestamp >= :run_hour_utc - INTERVAL '3 hours'
       AND event_timestamp < :run_hour_utc + INTERVAL '1 hour'
-),
-bars AS (
+)
+SELECT * FROM candidate_hours;
+```
+:::
+
+The `candidate_hours` window is then aggregated into hourly bars and marked
+final only once the watermark clears the allowed-lateness boundary.
+
+::: {#lst:sec04-hourly-ohlcv-bars}
+Listing: Hourly OHLCV aggregation and finalization.
+
+```sql
+WITH bars AS (
     SELECT
         exchange_name,
         asset_symbol,

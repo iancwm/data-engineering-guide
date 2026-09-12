@@ -17,7 +17,7 @@ for the full engine/publication split this follows.
 
 ```text
 manuscript/               12 Markdown chapters + order.txt (reading order)
-fragments/                 14 LaTeX diagram fragments, one per
+fragments/                 23 LaTeX diagram fragments, one per
                             [[REPORTKIT-VISUAL:fig:<slug>]] sentinel in the manuscript
 publication.yaml           title, author, and other publication identity
 publication-guidelines.md  editorial spec for this specific guide

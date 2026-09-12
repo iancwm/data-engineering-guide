@@ -1,7 +1,9 @@
 # ReportKit Primitive Additions — Minimal Implementation Spec
 
-**Status:** Engine shipped; consumer migration partially complete (2 of 4
-findings migrated, 1 partially, 1 not started)  
+**Status:** Engine shipped; consumer migration complete for all four
+findings, plus the related `fig-sec07-lineage.tex` cleanup from §4/§6. One
+new engine bug was found and locally worked around during migration (see
+§2, Watermark) — worth filing against report-kit separately.  
 **Date:** 2026-09-07 (spec); progress updated 2026-09-12  
 **Consumer reviewed:** `/home/iancwm/git/data-engineering-guide`  
 **Engine reviewed:** `/home/iancwm/git/report-kit` at `71c8bd960efda48721c99cac9624bc4bac91abfe`  
@@ -11,22 +13,23 @@ primitives"), now on `main` at `6527036`
 ## Progress summary
 
 The engine side of this spec is fully implemented, tested, and documented in
-report-kit — nothing further is needed there. The consumer repo has picked up
-the new commit via `reportkit.lock` and migrated two of the four findings;
-one more is partially done (the `\RKEdge` exception below is intentional, not
-a gap) and two consumer migration items from §4 are still outstanding.
+report-kit — nothing further is needed there. The consumer repo has now
+migrated all four findings, plus the separate `text width=24mm` cleanup in
+`fig-sec07-lineage.tex` that §4/§6 tracked alongside them.
 
 | # | Finding | Engine | Consumer migration |
 |---|---|---|---|
-| P0 | Swimlane `columns=` | Done | **Not started** — `fig-sec06-capstone-milestones.tex` still omits `columns=`, so its 5-column swimlane still uses the pre-fix hard-coded coordinate model |
+| P0 | Swimlane `columns=` | Done | **Migrated** — `fig-sec06-capstone-milestones.tex` now passes `columns=5`; all 5 columns confirmed inside the declared 12.2cm width |
 | P0 | Positioned/routed state & DAG branches | Done | **Migrated** — `fig-sec05-retry-state.tex`, `fig-sec05-orchestration-dag.tex` (commit `8b4ed24`) |
 | P1 | Architecture annotation | Done | **Migrated** — `fig-sec08-platform-boundaries.tex` (commit `8b4ed24`) |
-| P1 | Watermark `label-position` | Done | **Not started** — `fig-sec02-event-time-watermark.tex` uses `\event` only; the long `\watermark` labels described in §4 were never restored |
+| P1 | Watermark `label-position` | Done | **Migrated** — `fig-sec02-event-time-watermark.tex` now uses `\watermark[label-position=below,label-width=...]` with descriptive labels; required a local per-fixture workaround for an engine bug (see §2) |
 
 Consumer commits: `bcfa9da` (content pass, bumped `reportkit.lock` to
 `71c8bd9`, added the new fixtures using the *old* raw-primitive style),
 `8b4ed24` (migrated the retry-state, orchestration-DAG, and
-platform-boundaries fixtures to the new API).
+platform-boundaries fixtures to the new API), plus this pass (swimlane
+columns, watermark labels, lineage `text width` cleanup — not yet committed
+as of this doc update).
 
 ## 1. Purpose
 
@@ -45,11 +48,14 @@ deriving evenly spaced centers inside the declared width and raising a
 package error when `columns` is below the highest declared step. Documented
 in `SKILL.md` and the changelog.
 
-**Consumer status: not started.** `fragments/fig-sec06-capstone-milestones.tex`
-declares a 5-column swimlane (`\lanestep` calls numbered 1–5) inside
-`width=12.2` but does not pass `columns=5`, so it is still exposed to the
-original bug this finding described (column 5 centered outside the declared
-width). This is the next consumer migration item to pick up.
+**Consumer status: migrated.** `fragments/fig-sec06-capstone-milestones.tex`
+now passes `columns=5` on `reportswimlane` alongside its existing `lanes=`,
+`lane spacing=`, and `width=12.2` keys. No `node width=`/`column spacing=`
+override was needed — the engine's automatic even-spacing fit cleanly.
+Verified by building section 06 individually
+(`publication_build.py --mode section --section 06-quality-reliability.md`,
+zero diagnostics) and visually confirming all 5 columns sit inside the
+12.2cm lane width with no overlap.
 
 `reportswimlane` accepts `width`, but `\lanestep` places every column at
 `#4*2.55` regardless of that width (`latex_templates/reportkit-process.sty`,
@@ -186,10 +192,37 @@ left|right`, `label-width=`, and `label-anchor=`, defaulting to the original
 below-marker placement. Covered by
 `test_timeline_marker_labels_avoid_track_name_and_page_boundary` (passes).
 
-**Consumer status: not started.** `fig-sec02-event-time-watermark.tex` still
-uses only `\event` markers with no `\watermark` calls at all — the long
-labels this finding was written to unblock were never restored. This is the
-other outstanding consumer migration item.
+**Consumer status: migrated**, with a caveat. `fig-sec02-event-time-watermark.tex`
+now uses two `\watermark[label-position=below,label-width=...]` calls on the
+`Watermark` track with descriptive labels (tying the marker values to the
+allowed-lateness/window-close narrative in the caption), replacing the
+terse `\event`-only markers that track previously had. Verified by building
+section 02 individually (zero diagnostics) and visually confirming the
+labels sit below the track, don't collide with the track name, each other,
+or neighboring-track markers.
+
+**Engine bug found during migration:** `\watermark`'s label styling reuses
+`rk transition label`, which bakes in TikZ's `midway` key
+(`reportkit-grammar.sty:15-18`) — a key meaningful only for a node placed
+*on a path* (`node[midway]` inside a `\draw ... to node{}`). `\watermark`
+instead places a *standalone* `\node ... at (coord) {...}`; `midway` on a
+standalone node silently discards the `at` coordinate, collapsing every
+`\watermark` label onto the picture origin regardless of `label-position`,
+track, or fractional position. Confirmed independently with a minimal
+non-ReportKit TikZ reproduction (a plain `\node[midway] at (3,3){}` renders
+at the origin, not at `(3,3)`). The engine's own regression test
+(`test_timeline_marker_labels_avoid_track_name_and_page_boundary`) only
+asserts weak relative conditions that happen to hold even when the label is
+at the origin, so it didn't catch this.
+
+Worked around locally in this one fixture only: a `\tikzset` inside the
+`reporttimeline` environment's own `\begingroup`/`\endgroup` scope
+redefines `rk transition label` without `midway`, restoring the documented
+`label-position` behavior for this figure without touching report-kit. This
+is a real engine defect, not just a consumer gap — **recommend filing it
+against report-kit** so `\watermark` (and anything else reusing
+`rk transition label` for a standalone node) is fixed upstream and the
+regression test is tightened to actually catch a collapsed-to-origin label.
 
 `\watermark` always places its label below the marker
 (`latex_templates/reportkit-grammar.sty:158-165`). Long labels near the track
@@ -240,12 +273,16 @@ clear package errors for invalid positions, unknown routing modes, and a
       API — done in `8b4ed24` (`\RKEdge` for the DAG's optional/typed branch
       edges intentionally kept; see §2 above)
 - [x] remove the raw architecture annotation node — done in `8b4ed24`
-- [ ] restore the event-time `\watermark` labels using placement keys — **not
-      started**
-- [ ] pass `columns=5` to the capstone swimlanes — **not started**
-- [ ] remove the `text width=24mm` workaround in `fig-sec07-lineage.tex`,
+- [x] restore the event-time `\watermark` labels using placement keys —
+      **done**; required a local per-fixture workaround for an engine bug
+      (see §2, Watermark)
+- [x] pass `columns=5` to the capstone swimlanes — **done**; verified all 5
+      columns inside the declared 12.2cm width
+- [x] remove the `text width=24mm` workaround in `fig-sec07-lineage.tex`,
       since the current `reportnetwork` spacing fix already prevents fused
-      nodes — **not started**
+      nodes — **done**; the stale explanatory comment describing the old
+      bug was removed along with the workaround, and the default `rk node`
+      width renders correctly at the engine's current 3.9cm grid spacing
 
 No changes to the publication engine, manuscript structure, or content
 semantics are part of this spec.
@@ -258,9 +295,9 @@ semantics are part of this spec.
       confirmed 2026-09-12 (`pytest tests/test_primitive_additions.py`, 6
       passed).
 - [ ] The current guide rebuilds with no new diagnostics, clipping, or
-      unresolved references after migration — **partially verified**: the
-      two migrated sections (05, 08) rebuild individually with
-      `publication_build.py --mode section` and zero diagnostics. The
+      unresolved references after migration — **partially verified**: all
+      five touched sections (02, 05, 06, 07, 08) now rebuild individually
+      with `publication_build.py --mode section` and zero diagnostics. The
       **combined** build (`--mode combined`) currently fails on an unrelated,
       pre-existing LaTeX aux/label error in Section 4 ("Common
       Transformation Anti-Patterns"), confirmed present on the
@@ -274,19 +311,27 @@ semantics are part of this spec.
 
 ## 6. Remaining consumer work
 
-To fully close this spec on the consumer side:
+All consumer migration items this spec tracked are done:
 
-1. Add `columns=5` to `fig-sec06-capstone-milestones.tex`'s
-   `reportswimlane` and verify its five columns stay inside the declared
+1. ~~Add `columns=5` to `fig-sec06-capstone-milestones.tex`'s
+   `reportswimlane`~~ — done, all 5 columns confirmed inside the declared
    12.2 cm width.
-2. Restore descriptive `\watermark` labels in
-   `fig-sec02-event-time-watermark.tex` using `label-position=`/
-   `label-width=` to avoid the original collision, per this spec's original
-   intent for that figure.
-3. Remove the `text width=24mm` workaround in `fig-sec07-lineage.tex` and
-   confirm `reportnetwork`'s current spacing keeps edges pointing the
-   correct direction without it.
-4. Separately, investigate and fix the pre-existing combined-build failure
-   in Section 4 so the whole guide can be rebuilt and diagnosed end-to-end
-   again (out of scope for this spec, but currently the only thing standing
-   between "sections rebuild clean" and "the guide rebuilds clean").
+2. ~~Restore descriptive `\watermark` labels in
+   `fig-sec02-event-time-watermark.tex`~~ — done, using `label-position=`/
+   `label-width=`; surfaced an engine bug worked around locally (§2).
+3. ~~Remove the `text width=24mm` workaround in `fig-sec07-lineage.tex`~~ —
+   done; `reportnetwork`'s current default spacing keeps edges pointing the
+   correct direction without any override.
+
+One item remains, out of this spec's scope but blocking full end-to-end
+verification:
+
+4. Investigate and fix the pre-existing combined-build failure in Section 4
+   so the whole guide can be rebuilt and diagnosed end-to-end again.
+
+And one new item surfaced by this pass, to track upstream rather than here:
+
+5. File the `\watermark`/`midway` label-placement bug (§2, Watermark)
+   against report-kit, and tighten
+   `test_timeline_marker_labels_avoid_track_name_and_page_boundary` so it
+   would actually fail on a label collapsed to the picture origin.

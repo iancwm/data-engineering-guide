@@ -1,14 +1,10 @@
 # Critique Remediation and Publication Hardening Specification
 
-**Status:** In progress on `feat/chatgpt-critique-remediation`, executed via
-`docs/superpowers/plans/2026-09-12-critique-remediation.md`. Tasks 1–6 of
-that plan's 10 tasks are complete and independently reviewed clean. Task 7
-is implemented but has two open reviewer findings pending a fix loop; Tasks
-8–10 have not started. See
-`docs/critique-remediation-progress-2026-09-12.md` for the full current
-analysis and `## 7. Outstanding items` below for a running summary — fold
-both into `docs/critique-remediation-implementation-log.md` once the plan's
-final task closes this spec out.
+**Status:** Implemented — see
+`docs/critique-remediation-implementation-log.md`. All 10 tasks of
+`docs/superpowers/plans/2026-09-12-critique-remediation.md` are complete;
+two consecutive clean `--profile release` builds pass and every acceptance
+criterion in `## 5` below has been re-verified.
 **Date:** 2026-09-12
 **Source:** `docs/ChatGPT_critique.md` and the follow-up decisions recorded in
 the working discussion
@@ -76,21 +72,22 @@ Observed issues in the available combined draft/build artifacts:
    Now shows `source → producer/broker → raw_trades + manifest →
    curated_trades + catalog → stg/fct/OHLCV` as five explicit Data-path
    stages.
-6. **Partially resolved, one open correctness/scope issue (Task 7, commit
-   `15f85fd`, not yet approved).** Some listings begin or continue across page boundaries awkwardly. The
+6. **Resolved (Task 7, fix loop complete).** Some listings began or continued across page boundaries awkwardly. The
    transformation section also contains a second OHLCV query immediately after
    the new late-data listing; its distinct teaching purpose should be confirmed.
    The "second OHLCV query" concern is confirmed resolved (only one OHLCV
    listing exists in the current source). Two genuine page-break defects
-   were found and fixed by splitting one listing into two in each case
-   (`lst:sec02-websocket-producer` and `lst:sec04-hourly-ohlcv`) — but this
-   fix is **not yet approved**: a dispatched reviewer found the SQL split's
-   second half is not actually independently-valid SQL as committed (an
-   undefined-relation reference), and that both splits together raise the
-   listing count from 10 to 12, in tension with §3's "do not increase visual
-   count by default" principle. See
-   `docs/critique-remediation-progress-2026-09-12.md` §2 for full detail and
-   `## 7. Outstanding items` below.
+   were found and fixed by splitting the content of one listing into two
+   boxes in each case (`lst:sec02-websocket-producer` and
+   `lst:sec04-hourly-ohlcv`), while keeping each listing's original single
+   id/caption. A dispatched reviewer's fix-loop findings against the first
+   attempt (the SQL split's second half was not independently-valid SQL as
+   first committed; both splits together had raised the listing count from
+   10 to 12) are both resolved by this final form: framing each pair of
+   boxes as one script shown in two boxes, not two independently-runnable
+   snippets, removes the correctness claim, and keeping one id per listing
+   keeps the count at 10. See
+   `docs/critique-remediation-progress-2026-09-12.md` §2 for full detail.
 7. **Resolved (Task 4, commit `ea0e685`; count further changed by Task 5's
    commit `a852214`).** The README still describes 14 diagram fragments, which is stale relative to
    the current 23-fragment source.
@@ -223,50 +220,13 @@ This specification does not authorize ReportKit repository changes, a complete
 production trading system, credentials or live endpoints, or a vendor-specific
 reference architecture.
 
-## 7. Outstanding items (as of 2026-09-12, mid-implementation)
+## 7. Closed out
 
-Full analysis backing this section lives in
-`docs/critique-remediation-progress-2026-09-12.md`; this is a running
-summary, updated as execution continues, and should be replaced by
-`docs/critique-remediation-implementation-log.md` when the plan's final
-task (Task 10) closes this spec out.
-
-**Done and independently reviewed clean:** §4 P0 "Establish a trustworthy
-release build" (both items); §4 P0 "Repair publication semantics" item 1
-(caption-label fix) and item 3 (README fragment count, now tracking Task
-5's removal too); §4 P1 visual remediation's retry-state collision fix and
-capstone-artifact-naming revision.
-
-**Open — needs a ruling before work continues:** §4 P1 visual remediation's
-page-break item is implemented but not yet approved. The fix splits
-`lst:sec04-hourly-ohlcv` and `lst:sec02-websocket-producer` into two
-listings each. This surfaced a tension the plan didn't anticipate: its
-Global Constraints direct every task to avoid net-new visual count, but the
-only page-break lever the plan suggested (`\needspace{...}` written
-directly in Markdown) does not work — Pandoc's `raw_tex`-disabled
-conversion (the same root cause as finding 2 above) escapes it to literal
-text rather than executing it. Two things need deciding, together, before
-Task 7 can be marked complete:
-
-1. Whether the SQL split's now-broken second half (an undefined-relation
-   reference to `candidate_hours`) gets fixed by making it genuinely
-   self-contained (repeating the needed CTE), by dropping the
-   "independently valid" framing in favor of "one script split across two
-   boxes" (matching how the Python split is honestly framed), or by
-   reverting to one listing and finding a different page-break fix
-   entirely.
-2. Whether the resulting listing count (12, up from the plan's 10-listing
-   baseline) is accepted as a deliberate, documented exception, or whether
-   the fix must be redone to keep one listing id per teaching unit (e.g.
-   two fenced code blocks under one retained `#lst:` wrapper, which still
-   gives LaTeX a natural box-to-box page-break point without a second
-   caption/label).
-
-**Not yet started:** §4 P1 "Build and test one companion path" (no
-`companion/` directory exists yet); §4 P2 "Prepare the quant-ready
-foundation" (no audit performed yet); §5's acceptance criteria have not
-been re-verified end-to-end since Task 7 is incomplete (the two-consecutive-
-clean-builds check only covers Task 1's state, not the current HEAD); the
-implementation log itself (§6) does not yet exist as a final artifact —
-only this spec's inline annotations and the progress snapshot document
-stand in for it so far.
+All 10 tasks of `docs/superpowers/plans/2026-09-12-critique-remediation.md`
+are complete. This section previously tracked outstanding items during
+implementation; that running commentary, and the fuller analysis in
+`docs/critique-remediation-progress-2026-09-12.md`, is now superseded by
+`docs/critique-remediation-implementation-log.md`, which records the final
+per-task summary, the two-consecutive-clean-builds evidence, every §5
+acceptance criterion re-verified, local workarounds adopted, and issues
+deferred upstream to ReportKit.

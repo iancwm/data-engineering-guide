@@ -1,12 +1,12 @@
 # Critique Remediation — Progress Snapshot (2026-09-12)
 
-**Status:** Temporary working document. This is not the spec and not the
-final implementation log — it persists the analysis accumulated while
-executing `docs/superpowers/plans/2026-09-12-critique-remediation.md`
-against `docs/critique-remediation-spec.md`, so that state survives even if
-execution is paused or resumed later. When the plan finishes, its content
-should be folded into the plan's Task 10 deliverable,
-`docs/critique-remediation-implementation-log.md`, and this file deleted.
+**Status:** Archived. The plan has finished — see
+`docs/critique-remediation-implementation-log.md` for the final, closed-out
+record. This document is kept (rather than deleted, its original intent)
+because the spec and other documents cross-reference its section numbers
+for the detailed reasoning behind the Task 7 fix-loop ruling; treat it as a
+frozen historical working log of that analysis, not a live-updated
+document.
 
 **Branch:** `feat/chatgpt-critique-remediation`
 **Plan:** `docs/superpowers/plans/2026-09-12-critique-remediation.md`
@@ -30,9 +30,47 @@ All six are on `main`'s successor branch, each independently re-verified by
 a dispatched reviewer (not just the implementer's own say-so), each with a
 passing combined `--profile release` build at time of review.
 
-## 2. In progress — Task 7 (A4/grayscale visual remediation pass)
+## 2. Task 7 (A4/grayscale visual remediation pass) — fix loop resolved
 
-**Commit under review:** `15f85fd` (implemented, not yet approved)
+**Original commit:** `15f85fd` (implemented, reviewer returned Needs fixes).
+**Fix-loop commit:** see `git log -1 --grep 'visual remediation pass'` on
+this branch after `15f85fd` for the redo that resolves both Critical
+findings and the Important finding below. Full before/after detail lives in
+`docs/superpowers/plans/2026-09-12-critique-remediation-visual-review-log.md`'s
+"Fix-loop resolution" section.
+
+**Ruling made on the open Critical-2 question (§5 below, as originally
+posed):** **Option B** — the fix was redone to keep the plan's 10-listing
+baseline rather than accept 12 as a new baseline. Both of Task 7's splits
+(`lst:sec02-websocket-producer`, `lst:sec04-hourly-ohlcv`) were collapsed
+back to their original single `#lst:` id, each now wrapping **two** fenced
+code blocks under **one** caption instead of two separately-captioned
+listings. This still gives LaTeX a natural box-to-box page-break point
+(Pandoc renders each fenced block as its own `Highlighting`/`Verbatim`
+environment regardless of how many share one Div), so the page-break defect
+stays fixed without a second `#lst:` id. Verified: `grep -c '^::: {#lst:'
+manuscript/*.md` sums to 10 again; re-rendered pg 21/22 and pg 41/42 at 200
+DPI and confirmed both breaks still land cleanly between the two boxes.
+
+This same redo also resolves **Critical 1** (the SQL split's second half was
+not independently valid SQL, referencing `candidate_hours` from the other
+listing): both listings are now framed explicitly as "one script shown in
+two boxes," not two independently-runnable snippets — the SQL listing's
+transition sentence says so directly — so there is no remaining claim that
+either box is independently runnable. This matches remediation option (b)
+from the reviewer's original list (drop the "independently valid" framing),
+combined with the count-preserving structural fix from option (redo without
+new `#lst:` entities).
+
+**Important finding** (the "Streaming engines express this with different
+syntax; the policy is the portable idea" hedge, dropped from the
+Illustrative lead-in during the original pass): restored verbatim.
+
+Full combined `--profile release` build passes after the redo: `status:
+passed`, 0 blocking diagnostics, 36/36 unique hypertargets (26 tables + 10
+listings), 0 leaked `label{` text in the rendered PDF.
+
+### 2.0 Historical: state as originally implemented (superseded by the above)
 
 **What it did:** Rendered and reviewed all 76 pages of the combined PDF at
 200 DPI grayscale. Found and fixed two real page-break defects by splitting
@@ -119,23 +157,21 @@ commit began claiming stronger correctness properties for the split code is
 the kind of small compounding change that made the Critical-1 bug easier to
 introduce unnoticed.
 
-### 2.2 Not yet actioned
+### 2.2 Resolution (superseding this section's original "not yet actioned" state)
 
-No fix has been dispatched yet for Task 7 as of this snapshot — execution
-was paused (by explicit user request, to persist this analysis and update
-the spec's outstanding items) before entering the plan's fix-loop process
-(resume the same implementer with the findings verbatim, then a scoped
-re-review). The controller has not yet made a ruling on the visual-count
-question; **that ruling is the first thing to decide before resuming
-Task 7's fix loop.**
+The fix loop has now run: the ruling in §5 below was made (Option B), and
+both splits were redone per §2 above. All three reviewer findings
+(Critical 1, Critical 2, Important) are resolved; see §2 for the detail and
+the visual review log's "Fix-loop resolution" section for the exact diffs
+and re-rendered page evidence. Task 7 is complete.
 
-## 3. Not yet started (Tasks 8–10 of 10)
+## 3. Remaining tasks (8–10 of 10)
 
-| # | Task | Depends on |
+| # | Task | Status |
 |---|---|---|
-| 8 | Companion DuckDB path, smoke-testing the manuscript's dedup listing | Independent of 2–7; blocked only by controller bandwidth, not by Task 7's open findings |
-| 9 | Quant-ready foundation audit | Should follow Task 8 (may point to it as a worked example) |
-| 10 | Two consecutive clean builds, full acceptance-criteria re-check, implementation log | Must run last, after everything else including Task 7's fix loop lands |
+| 8 | Companion DuckDB path, smoke-testing the manuscript's dedup listing | See implementation log / this document's successor for current status |
+| 9 | Quant-ready foundation audit | See implementation log / this document's successor for current status |
+| 10 | Two consecutive clean builds, full acceptance-criteria re-check, implementation log | Must run last, after everything else lands |
 
 ## 4. Cross-cutting environmental findings worth carrying forward
 
@@ -163,15 +199,14 @@ These are true regardless of how Task 7's findings are resolved:
   after every task and every review so far, since no task's brief lists it
   as a file to commit. This will keep happening on every future build;
   it's expected, not a regression.
-- **Current repository visual counts, as of `15f85fd` (Task 7's
-  as-yet-unapproved commit):** 22 figure fragments, 26 tables, **12**
-  listings (up from the plan's 10-listing baseline — see §2.1's Critical 2).
+- **Current repository visual counts, after the Task 7 fix loop:** 22 figure
+  fragments, 26 tables, **10** listings — back to the plan's baseline (see
+  §2's "Ruling made" for how).
 
-## 5. Immediate next decision
+## 5. Decision made: Option B
 
-Before resuming automated execution, a ruling is needed on Task 7's
-Critical 2 finding (visual-count constraint), since it determines what the
-fix-loop dispatch to the Task 7 implementer should ask for:
+Two options were on the table for Task 7's Critical 2 finding
+(visual-count constraint):
 
 - **Option A:** accept 12 listings as the new baseline, update the plan's
   Global Constraints section and any later task/brief that quotes "10
@@ -183,6 +218,18 @@ fix-loop dispatch to the Task 7 implementer should ask for:
   caption/label) and similarly collapsing the websocket-producer split back
   to one id with two internal code fences — while still fixing Critical 1's
   correctness bug either way.
+
+**Option B was chosen and implemented** (§2 above): it satisfies the plan's
+own explicit Global Constraint ("do not add new figures/tables/listings...
+every task here edits or removes, never adds net new visual count") at no
+cost to the page-break fix, since Pandoc gives each fenced code block its
+own LaTeX box regardless of how many share one Div/caption — the box-to-box
+break point Option A would have had to justify keeping around instead is
+available "for free" under Option B too. Option A's "12 as a new baseline"
+would have required editing the plan's own Global Constraints text to widen
+a limit the plan verified and stated deliberately; Option B needed no such
+retroactive edit. No later task depended on the 10-vs-12 distinction, so
+the ruling had no downstream effect on Tasks 8–10.
 
 This document does not make that ruling — see the accompanying update to
 `docs/critique-remediation-spec.md`'s outstanding items for how the spec

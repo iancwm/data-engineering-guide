@@ -226,6 +226,7 @@ To keep the later stages reproducible, make the project contract explicit:
 - Time: `event_timestamp` is the exchange's trade time and `ingested_at` is the timezone-aware UTC time at which the producer receives the event and assigns its envelope. Store both timestamps, retain the original source timestamp where possible, and record file-write time in the manifest if it is needed for sink diagnostics.
 - Partitioning: derive `event_date` and `event_hour` from `event_timestamp` in UTC. A late event can therefore be written to an older event-time partition even when it arrives today.
 - Scope: the stream may run continuously, or a bounded UTC interval may be used for local testing. Examples use parameters or placeholders rather than a fixed calendar date.
+- Session semantics: a spot crypto market trades continuously, so this capstone has no market calendar, trading session, or holiday to model. A quant edition covering a listed-exchange instrument (equities, futures, options) would need an explicit market-calendar/session-boundary source instead of assuming continuous trading -- flag this as a project-contract input to add, not something to infer from timestamps alone.
 
 The goal is to ingest those events with their raw payload and normalized envelope intact, publish them to a Kafka-compatible broker, and write replayable micro-batches to Parquet for later storage and transformation.
 
@@ -245,8 +246,8 @@ universal. It preserves the source payload, assigns the capstone envelope, and
 reconnects with bounded backoff; the consumer remains responsible for durable
 batch writes and offset commits.
 
-::: {#lst:sec02-websocket-producer-envelope}
-Listing: WebSocket producer envelope helper.
+::: {#lst:sec02-websocket-producer}
+Listing: WebSocket producer with bounded reconnect.
 
 ```python
 import json
@@ -269,13 +270,11 @@ def envelope(raw: dict, received_at: datetime) -> dict:
         "raw_payload": raw,
     }
 ```
-:::
 
 The reconnect loop below calls `envelope()` for every message it receives and
-retries the connection with bounded backoff.
-
-::: {#lst:sec02-websocket-producer-loop}
-Listing: WebSocket producer reconnect loop.
+retries the connection with bounded backoff. It is shown as a second box
+below, in the same listing, so the page break falls between the two
+functions rather than inside either one.
 
 ```python
 def run_forever(connect, publish, log, max_retries=8):

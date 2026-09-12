@@ -308,7 +308,10 @@ The staging layer should keep the same grain as the raw trade feed: one row per 
 
 **Runnable with adaptation.** This model declares its grain, deduplicates the
 trade key deterministically, and bounds each incremental run to an explicit
-lookback window.
+lookback window. The exact incremental macro varies by dbt adapter, but the
+boundary should remain explicit. The same logic is smoke-tested against a
+bounded fixture, translated from dbt Jinja to plain DuckDB SQL, in
+`companion/` at the root of this repository.
 
 ::: {#lst:sec04-deduplicate-trades}
 Listing: Deduplicated trade staging model.
@@ -344,12 +347,13 @@ The destination must merge or replace the same lookback partitions
 idempotently. A three-day interval is an example policy, not a universal
 default.
 
-**Illustrative.** A windowed aggregate keeps a short lookback open for late
-corrections, then finalizes an hour once the allowed-lateness boundary
-passes.
+**Illustrative.** A windowed aggregate keeps a short event-time lookback open
+for corrections, then marks an hour final only after the allowed-lateness
+boundary. Streaming engines express this with different syntax; the policy is
+the portable idea.
 
-::: {#lst:sec04-hourly-ohlcv-candidates}
-Listing: Hourly OHLCV late-data lookback window.
+::: {#lst:sec04-hourly-ohlcv}
+Listing: Hourly OHLCV with late-data lookback.
 
 ```sql
 WITH candidate_hours AS (
@@ -360,13 +364,12 @@ WITH candidate_hours AS (
 )
 SELECT * FROM candidate_hours;
 ```
-:::
 
-The `candidate_hours` window is then aggregated into hourly bars and marked
-final only once the watermark clears the allowed-lateness boundary.
-
-::: {#lst:sec04-hourly-ohlcv-bars}
-Listing: Hourly OHLCV aggregation and finalization.
+The `candidate_hours` window above is then aggregated into hourly bars and
+marked final only once the watermark clears the allowed-lateness boundary;
+the continuation is shown as a second box in the same listing (one script,
+not two independent queries) so the page break falls between the two `WITH`
+blocks instead of inside a `WHERE` clause.
 
 ```sql
 WITH bars AS (
@@ -409,6 +412,8 @@ GROUP BY 1, 2, 3;
 ```
 
 The interval uses an inclusive lower bound and exclusive upper bound, both in UTC. The exact SQL varies by engine. Some warehouses use different ordered aggregate functions for open and close prices. When multiple trades have the same event timestamp, use `source_trade_id` as a deterministic tie-breaker. The important point is conceptual: the model declares its grain, aggregates from a lower grain to a higher grain, and can be tested.
+
+Look-ahead bias is the mirror image of the late-data problem above: a backtest or feature pipeline that recomputes `fct_hourly_ohlcv` from today's fully-corrected `fct_trades` and then joins it back onto a past decision point is using information (a late correction, a redelivered trade) that was not actually available at that point in time. Point-in-time correctness means reconstructing the bar exactly as `is_final` would have reported it at the time, not as it reads after every late arrival has since settled -- keep the finalized-vs-still-open distinction (`is_final`) in any table a backtest reads from, rather than serving only the latest value per hour.
 
 This project teaches:
 

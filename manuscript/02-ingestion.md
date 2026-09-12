@@ -245,8 +245,8 @@ universal. It preserves the source payload, assigns the capstone envelope, and
 reconnects with bounded backoff; the consumer remains responsible for durable
 batch writes and offset commits.
 
-::: {#lst:sec02-websocket-producer-envelope}
-Listing: WebSocket producer envelope helper.
+::: {#lst:sec02-websocket-producer}
+Listing: WebSocket producer with bounded reconnect.
 
 ```python
 import json
@@ -269,13 +269,11 @@ def envelope(raw: dict, received_at: datetime) -> dict:
         "raw_payload": raw,
     }
 ```
-:::
 
 The reconnect loop below calls `envelope()` for every message it receives and
-retries the connection with bounded backoff.
-
-::: {#lst:sec02-websocket-producer-loop}
-Listing: WebSocket producer reconnect loop.
+retries the connection with bounded backoff. It is shown as a second box
+below, in the same listing, so the page break falls between the two
+functions rather than inside either one.
 
 ```python
 def run_forever(connect, publish, log, max_retries=8):

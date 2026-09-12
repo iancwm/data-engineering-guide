@@ -89,6 +89,47 @@ from the operation/usage that depends on it — the reader loses no context
 at the break. These are logged as reviewed, justified "not an issue" rows,
 per the Definition of Done.
 
+## Fix-loop resolution (reviewer findings)
+
+A dispatched reviewer returned **Needs fixes** on the state described above,
+with two Critical findings and one Important finding (full detail in
+`docs/critique-remediation-progress-2026-09-12.md` §2.1). Both splits above
+have been **redone** to resolve all three, rather than kept as committed:
+
+- **Critical 1** (the `-bars` half referenced `candidate_hours`, a CTE that
+  only existed in the separate `-candidates` listing, so it was not
+  independently valid SQL as committed) and **Critical 2** (the two splits
+  raised the listing count from the plan's 10-listing baseline to 12, against
+  the plan's explicit "no net new visual count" Global Constraint) are both
+  resolved the same way: each split was collapsed back into a single
+  `#lst:` Div (`lst:sec02-websocket-producer`,
+  `lst:sec04-hourly-ohlcv` — the original ids), now wrapping **two** fenced
+  code blocks under **one** caption instead of two separately-captioned
+  listings. Pandoc still renders each fenced block as its own LaTeX
+  `Highlighting`/`Verbatim` box, so the page break still falls cleanly
+  between the two boxes (verified by re-rendering pg 21/22 and pg 41/42, see
+  below) — the fix no longer needs a second `#lst:` id to get that
+  box-to-box break point. Listing count is back to the plan's baseline of 10
+  (`grep -c '^::: {#lst:' manuscript/*.md` sums to 10).
+- Both listings are now presented honestly as **one script shown in two
+  boxes**, not two independently-runnable queries — matching how the Python
+  split was already (correctly) framed. The transition sentence between the
+  two SQL boxes now reads "...the continuation is shown as a second box in
+  the same listing (one script, not two independent queries)...", so no
+  reader is invited to run the second box alone.
+- **Important** (the "Streaming engines express this with different syntax;
+  the policy is the portable idea" hedge, dropped from the Illustrative
+  lead-in during the original Task 7 pass): restored verbatim.
+
+Re-rendered pg 21/22 (websocket producer) and pg 41/42 (hourly OHLCV) at 200
+DPI after the redo: both breaks still land cleanly between the two boxes —
+`envelope()` completes before the break, `run_forever()` starts fresh on the
+next page; the `candidate_hours` CTE and its trivial `SELECT` complete before
+the break, `bars AS (...)` starts fresh on the next page. Neither box splits
+mid-statement. Full combined `--profile release` build passes after the redo
+(`status: passed`, 0 blocking diagnostics, 36/36 unique hypertargets, 0
+leaked `label{` text).
+
 ## Page-by-page log
 
 | PDF pg | Footer | Issue | Fix |
@@ -113,7 +154,7 @@ per the Definition of Done.
 | 18 | 15 | No issue found (Fig 3 backpressure diagram + Fig 4 CDC comparison, labels legible; note Fig 4 label boxes are a noticeably smaller diagram than Fig 2/3 but text inside ("Transaction log", "Change event", etc.) is same size as body text, legible) | n/a |
 | 19 | 16 | No issue found (Fig 5 event-time diagram, all labels/annotations legible even the small callout boxes "02:59 watermark..." which use a smaller font but is still clearly readable at print size, comparable to a caption/footnote size, not illegibly small) | n/a |
 | 20 | 17 | No issue found (Table 6 ingestion tooling, Table 7 practice data sources, Capstone Project intro — each table fits fully on one page) | n/a |
-| 21 | 18 | **ISSUE**: `lst:sec02-websocket-producer` (Listing: WebSocket producer with bounded reconnect) — code listing starts on this page ("Runnable with adaptation" intro + `import json`/`envelope()` def) and continues to pg 22; the page break falls between `def run_forever(...): / retries = 0` (bottom of this page) and `while True:` (top of pg 22), i.e. a setup/init line separated from the loop that consumes it, across a page break. | **FIXED**: split the single fenced listing into two listings at the natural function boundary (`envelope()` helper vs `run_forever()` loop), with a one-sentence transition — a markdown-level restructuring since raw `\needspace` cannot be used in manuscript/*.md (pandoc is invoked with `-f markdown-raw_tex`, deliberately disabling raw TeX passthrough in content files per `publication_build.py`'s comment: "Trusted TeX belongs in a validated fragment or a direct .tex document, never a content field"). Re-rendered and confirmed each half now renders as a complete, independent listing. |
+| 21 | 18 | **ISSUE**: `lst:sec02-websocket-producer` (Listing: WebSocket producer with bounded reconnect) — code listing starts on this page ("Runnable with adaptation" intro + `import json`/`envelope()` def) and continues to pg 22; the page break falls between `def run_forever(...): / retries = 0` (bottom of this page) and `while True:` (top of pg 22), i.e. a setup/init line separated from the loop that consumes it, across a page break. | **FIXED** (redone after reviewer fix-loop, see "Fix-loop resolution" above): the listing keeps its original single `#lst:sec02-websocket-producer` id/caption, now wrapping two fenced Python blocks (`envelope()`, then `run_forever()`) with a one-sentence transition between them — one listing, two boxes, so the page break falls between the boxes without a second id/caption. Re-rendered and confirmed each box now renders complete on its own page. |
 | 22 | 19 | Continuation of the above listing (second half: `while True:` loop body); covered by the same fix. Rest of page (raw event envelope JSON listing, Illustrative note, "ingestion output and handoff" bullets start) fine. | see pg 21 |
 | 23 | 20 | No issue found (replay procedure, Section handoff, Common beginner mistakes, order-book caution, Ingestion Design Checklist bullets) | n/a |
 | 24 | 21 | No issue found (Section 3 intro, Storage Requirements bullets, OLTP/OLAP intro + Table 8, fits fully on one page) | n/a |
@@ -133,7 +174,7 @@ per the Definition of Done.
 | 38 | 35 | No issue found (Grain continuation, Fig 10 wrong-grain/corrected-grain diagram labels legible, Aggregation and Metrics, Dimensional Modeling, Table 15) | n/a |
 | 39 | 36 | No issue found (Table 16 SCD types, Transformation Tooling Landscape, Table 17 start) | n/a |
 | 40 | 37 | No issue found (Table 17 continuation repeats header row correctly, dbt explanation, Common Transformation Anti-Patterns, Capstone Continuation intro) | n/a |
-| 41 | 38 | **ISSUE**: `lst:sec04-hourly-ohlcv` (Listing: Hourly OHLCV with late-data lookback) — the `WITH candidate_hours AS (...)` CTE opens on this page with a partial body (`SELECT * FROM stg_trades WHERE event_timestamp >= :run_hour_utc - INTERVAL '3 hours'`) and the page breaks mid-WHERE-clause, before the `AND event_timestamp < ...` continuation and the second `bars AS (...)` CTE, which land on pg 42. This is the checklist's own worked example almost verbatim (a `WITH ... AS (` CTE opener severed from its continuation by a page break). Note: `lst:sec04-hourly-ohlcv` is also the listing checked for spec Finding #6 (possible duplicate OHLCV listing) — confirmed via full-file grep (see Finding #6 section above) that only this one OHLCV listing exists; the pagination defect found here is unrelated to the duplicate-listing question. (Also on this page, fully contained: the `WITH ranked AS (...)` deduplicated-staging-model listing — starts and ends cleanly on this page, no split, not an issue.) | **FIXED**: split the listing into two at the natural CTE boundary (`candidate_hours` windowing CTE vs. `bars` aggregation CTE + final SELECT), each made independently valid SQL, with a one-sentence transition — markdown-level restructuring, same raw-TeX constraint as the pg 21/22 websocket-producer fix. The div split alone was not enough (it still broke mid-`WHERE`-clause inside listing 1 on first attempt); also trimmed the "Runnable with adaptation"/"Illustrative" lead-in paragraphs on this page from 3 to 2 wrapped lines each to free the vertical space listing 1 needed to render complete. Re-rendered and confirmed each half now renders as a complete, independent listing with no mid-clause split. |
+| 41 | 38 | **ISSUE**: `lst:sec04-hourly-ohlcv` (Listing: Hourly OHLCV with late-data lookback) — the `WITH candidate_hours AS (...)` CTE opens on this page with a partial body (`SELECT * FROM stg_trades WHERE event_timestamp >= :run_hour_utc - INTERVAL '3 hours'`) and the page breaks mid-WHERE-clause, before the `AND event_timestamp < ...` continuation and the second `bars AS (...)` CTE, which land on pg 42. This is the checklist's own worked example almost verbatim (a `WITH ... AS (` CTE opener severed from its continuation by a page break). Note: `lst:sec04-hourly-ohlcv` is also the listing checked for spec Finding #6 (possible duplicate OHLCV listing) — confirmed via full-file grep (see Finding #6 section above) that only this one OHLCV listing exists; the pagination defect found here is unrelated to the duplicate-listing question. (Also on this page, fully contained: the `WITH ranked AS (...)` deduplicated-staging-model listing — starts and ends cleanly on this page, no split, not an issue.) | **FIXED** (redone after reviewer fix-loop, see "Fix-loop resolution" above): the listing keeps its original single `#lst:sec04-hourly-ohlcv` id/caption, now wrapping two fenced SQL blocks (the `candidate_hours` windowing CTE, then the `bars` aggregation CTE + final `SELECT`) with a one-sentence transition explicitly framing them as one script in two boxes, not two independent queries — so the second box is no longer presented as independently-runnable SQL that references an undefined relation. Re-rendered and confirmed each box now renders complete on its own page, no mid-clause split. |
 | 42 | 39 | Continuation of the above listing (second half: `bars AS (...)` CTE + final `SELECT *, ... AS is_final FROM bars;`); covered by the same fix. Rest of page (DuckDB-style example aggregation SELECT, "This project teaches" bullets, Transformation Output/Handoff bullets) fine. | see pg 41 |
 | 43 | 40 | No issue found (fct_hourly_ohlcv output bullet, Section 6 handoff note, Common beginner mistakes, Transformation and Processing Checklist — end of Section 4) | n/a |
 | 44 | 41 | No issue found (Section 5 Orchestration intro, Why Orchestration Matters, Directed Acyclic Graphs, numbered task list) | n/a |
@@ -175,9 +216,11 @@ per the Definition of Done.
 - **76 of 76 pages reviewed** (every page rendered at 200 DPI grayscale and
   visually inspected via the Read tool, not skimmed from source).
 - **2 real issues found and fixed**: the WebSocket-producer listing
-  (pg 21/22) and the Hourly-OHLCV listing (pg 41/42), both split at a clean
-  syntactic boundary to remove the "setup severed from operation" page-break
-  pattern.
+  (pg 21/22) and the Hourly-OHLCV listing (pg 41/42), both split into two
+  boxes at a clean syntactic boundary, under their original single `#lst:`
+  id, to remove the "setup severed from operation" page-break pattern
+  without adding net new listing count (see "Fix-loop resolution" above —
+  this reflects the post-review-fix-loop state, not the first attempt).
 - **2 additional candidates checked and explicitly judged not-issues**
   (CREATE TABLE column-list split pg 27/28; YAML test-list split pg 58/59),
   with justification recorded.

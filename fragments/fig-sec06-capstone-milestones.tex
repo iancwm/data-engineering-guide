@@ -6,7 +6,7 @@
   source={Author's synthesis.},
   description={Four horizontal milestone lanes show Ingest producing raw trades and a manifest, Store producing curated trades and a catalog, Model producing staging, trade facts, and hourly OHLCV, and Operationalize trust producing tests, reconciliation evidence, quarantine records, ownership, and a runbook. Each lane ends with a handoff condition before the next lane begins.}
 ]
-\begin{reportswimlane}[lanes={Ingest,Store,Model,Operationalize trust},lane spacing=1.5,width=12.2]
+\begin{reportswimlane}[lanes={Ingest,Store,Model,Operationalize trust},lane spacing=1.5,width=12.2,columns=5]
   \lanestep{ingest-input}{Ingest}{BTCUSDT stream}{1}
   \lanestep{raw-output}{Ingest}{raw trades and manifest}{2}
   \lanestep{curated-output}{Store}{curated trades and catalog}{3}

@@ -1,6 +1,14 @@
 # Critique Remediation and Publication Hardening Specification
 
-**Status:** Plan approved; implementation not started
+**Status:** In progress on `feat/chatgpt-critique-remediation`, executed via
+`docs/superpowers/plans/2026-09-12-critique-remediation.md`. Tasks 1–6 of
+that plan's 10 tasks are complete and independently reviewed clean. Task 7
+is implemented but has two open reviewer findings pending a fix loop; Tasks
+8–10 have not started. See
+`docs/critique-remediation-progress-2026-09-12.md` for the full current
+analysis and `## 7. Outstanding items` below for a running summary — fold
+both into `docs/critique-remediation-implementation-log.md` once the plan's
+final task closes this spec out.
 **Date:** 2026-09-12
 **Source:** `docs/ChatGPT_critique.md` and the follow-up decisions recorded in
 the working discussion
@@ -37,25 +45,58 @@ figures, tables, or listings.
 
 Observed issues in the available combined draft/build artifacts:
 
-1. The combined build repeatedly fails while reading generated auxiliary data
+1. **Resolved (Task 1, commit `731e268`).** The combined build repeatedly fails while reading generated auxiliary data
    with a runaway `\\@writefile`/`\\contentsline` argument. The known blocker
    is also recorded in `docs/reportkit-primitive-additions-spec.md`; it must be
    reproduced from a clean output directory before its ownership is assigned.
-2. Table and listing captions in the rendered draft expose raw
+   Root cause confirmed: a stale `build/combined/` output directory reused
+   across incompatible runs, not a ReportKit defect — building from empty
+   makes it disappear. Filed as a non-blocking upstream note in
+   `docs/reportkit-known-issues.md` rather than a bug against ReportKit
+   itself, per item 3 below.
+2. **Resolved (Task 3, commit `433416a`).** Table and listing captions in the rendered draft expose raw
    `\\label{...}` text, indicating that the source caption-label convention is
    not being consumed by the current publication pipeline.
-3. The available PDF uses a `draft` footer even though the earlier critique
+   Root cause confirmed: Pandoc converts this manuscript with `raw_tex`
+   disabled, so a bare `\label{...}` in caption text is escaped to literal
+   text rather than executed. Replaced with a supported Pandoc fenced-Div id
+   wrapper (`::: {#tbl:...}` / `::: {#lst:...}`) across all captions in
+   scope at the time; independently reviewed with zero leakage and zero
+   duplicate ids. Task 7's listing splits (see item 6) added further ids
+   using the same wrapper convention.
+3. **Resolved (Task 1, commit `731e268`).** The available PDF uses a `draft` footer even though the earlier critique
    expected a publication-like build.
-4. The retry-state figure has an edge/label collision around `Retrying` at A4
+   Fixed by adding a `profiles: release:` section to `publication.yaml`
+   (`version: v1.0`) and building with `--profile release`.
+4. **Resolved (Task 2, commit `7a1f261`).** The retry-state figure has an edge/label collision around `Retrying` at A4
    size.
-5. The cumulative capstone fragment describes `raw_trades + manifest`, but its
+5. **Resolved (Task 6, commit `d4e0fa7`).** The cumulative capstone fragment describes `raw_trades + manifest`, but its
    visible node is currently a combined `producer and broker` label. The figure
    should make the named durable artifacts and their handoffs visible.
-6. Some listings begin or continue across page boundaries awkwardly. The
+   Now shows `source → producer/broker → raw_trades + manifest →
+   curated_trades + catalog → stg/fct/OHLCV` as five explicit Data-path
+   stages.
+6. **Partially resolved, one open correctness/scope issue (Task 7, commit
+   `15f85fd`, not yet approved).** Some listings begin or continue across page boundaries awkwardly. The
    transformation section also contains a second OHLCV query immediately after
    the new late-data listing; its distinct teaching purpose should be confirmed.
-7. The README still describes 14 diagram fragments, which is stale relative to
+   The "second OHLCV query" concern is confirmed resolved (only one OHLCV
+   listing exists in the current source). Two genuine page-break defects
+   were found and fixed by splitting one listing into two in each case
+   (`lst:sec02-websocket-producer` and `lst:sec04-hourly-ohlcv`) — but this
+   fix is **not yet approved**: a dispatched reviewer found the SQL split's
+   second half is not actually independently-valid SQL as committed (an
+   undefined-relation reference), and that both splits together raise the
+   listing count from 10 to 12, in tension with §3's "do not increase visual
+   count by default" principle. See
+   `docs/critique-remediation-progress-2026-09-12.md` §2 for full detail and
+   `## 7. Outstanding items` below.
+7. **Resolved (Task 4, commit `ea0e685`; count further changed by Task 5's
+   commit `a852214`).** The README still describes 14 diagram fragments, which is stale relative to
    the current 23-fragment source.
+   Fixed to 23, then to 22 after Task 5 removed the redundant
+   ingestion-semantics figure (§4 P1's compaction/removal item) — README
+   stays in sync with `ls fragments/*.tex | wc -l` as of each change.
 
 These findings take precedence over the critique's historical page numbers and
 counts.
@@ -181,3 +222,51 @@ what changed and what remains for the quant-focused edition.
 This specification does not authorize ReportKit repository changes, a complete
 production trading system, credentials or live endpoints, or a vendor-specific
 reference architecture.
+
+## 7. Outstanding items (as of 2026-09-12, mid-implementation)
+
+Full analysis backing this section lives in
+`docs/critique-remediation-progress-2026-09-12.md`; this is a running
+summary, updated as execution continues, and should be replaced by
+`docs/critique-remediation-implementation-log.md` when the plan's final
+task (Task 10) closes this spec out.
+
+**Done and independently reviewed clean:** §4 P0 "Establish a trustworthy
+release build" (both items); §4 P0 "Repair publication semantics" item 1
+(caption-label fix) and item 3 (README fragment count, now tracking Task
+5's removal too); §4 P1 visual remediation's retry-state collision fix and
+capstone-artifact-naming revision.
+
+**Open — needs a ruling before work continues:** §4 P1 visual remediation's
+page-break item is implemented but not yet approved. The fix splits
+`lst:sec04-hourly-ohlcv` and `lst:sec02-websocket-producer` into two
+listings each. This surfaced a tension the plan didn't anticipate: its
+Global Constraints direct every task to avoid net-new visual count, but the
+only page-break lever the plan suggested (`\needspace{...}` written
+directly in Markdown) does not work — Pandoc's `raw_tex`-disabled
+conversion (the same root cause as finding 2 above) escapes it to literal
+text rather than executing it. Two things need deciding, together, before
+Task 7 can be marked complete:
+
+1. Whether the SQL split's now-broken second half (an undefined-relation
+   reference to `candidate_hours`) gets fixed by making it genuinely
+   self-contained (repeating the needed CTE), by dropping the
+   "independently valid" framing in favor of "one script split across two
+   boxes" (matching how the Python split is honestly framed), or by
+   reverting to one listing and finding a different page-break fix
+   entirely.
+2. Whether the resulting listing count (12, up from the plan's 10-listing
+   baseline) is accepted as a deliberate, documented exception, or whether
+   the fix must be redone to keep one listing id per teaching unit (e.g.
+   two fenced code blocks under one retained `#lst:` wrapper, which still
+   gives LaTeX a natural box-to-box page-break point without a second
+   caption/label).
+
+**Not yet started:** §4 P1 "Build and test one companion path" (no
+`companion/` directory exists yet); §4 P2 "Prepare the quant-ready
+foundation" (no audit performed yet); §5's acceptance criteria have not
+been re-verified end-to-end since Task 7 is incomplete (the two-consecutive-
+clean-builds check only covers Task 1's state, not the current HEAD); the
+implementation log itself (§6) does not yet exist as a final artifact —
+only this spec's inline annotations and the progress snapshot document
+stand in for it so far.

@@ -226,6 +226,7 @@ To keep the later stages reproducible, make the project contract explicit:
 - Time: `event_timestamp` is the exchange's trade time and `ingested_at` is the timezone-aware UTC time at which the producer receives the event and assigns its envelope. Store both timestamps, retain the original source timestamp where possible, and record file-write time in the manifest if it is needed for sink diagnostics.
 - Partitioning: derive `event_date` and `event_hour` from `event_timestamp` in UTC. A late event can therefore be written to an older event-time partition even when it arrives today.
 - Scope: the stream may run continuously, or a bounded UTC interval may be used for local testing. Examples use parameters or placeholders rather than a fixed calendar date.
+- Session semantics: a spot crypto market trades continuously, so this capstone has no market calendar, trading session, or holiday to model. A quant edition covering a listed-exchange instrument (equities, futures, options) would need an explicit market-calendar/session-boundary source instead of assuming continuous trading -- flag this as a project-contract input to add, not something to infer from timestamps alone.
 
 The goal is to ingest those events with their raw payload and normalized envelope intact, publish them to a Kafka-compatible broker, and write replayable micro-batches to Parquet for later storage and transformation.
 

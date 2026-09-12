@@ -413,6 +413,8 @@ GROUP BY 1, 2, 3;
 
 The interval uses an inclusive lower bound and exclusive upper bound, both in UTC. The exact SQL varies by engine. Some warehouses use different ordered aggregate functions for open and close prices. When multiple trades have the same event timestamp, use `source_trade_id` as a deterministic tie-breaker. The important point is conceptual: the model declares its grain, aggregates from a lower grain to a higher grain, and can be tested.
 
+Look-ahead bias is the mirror image of the late-data problem above: a backtest or feature pipeline that recomputes `fct_hourly_ohlcv` from today's fully-corrected `fct_trades` and then joins it back onto a past decision point is using information (a late correction, a redelivered trade) that was not actually available at that point in time. Point-in-time correctness means reconstructing the bar exactly as `is_final` would have reported it at the time, not as it reads after every late arrival has since settled -- keep the finalized-vs-still-open distinction (`is_final`) in any table a backtest reads from, rather than serving only the latest value per hour.
+
 This project teaches:
 
 - how to preserve raw data while building curated models;

@@ -1,8 +1,8 @@
 {
   "pandoc": "pandoc 3.1.3",
   "python": "3.12.3",
-  "reportkit_commit": "911db8789a036e1bbe324b07b496dc907ed4d431",
-  "reportkit_ref": "v1.3.0-127-g911db87",
+  "reportkit_commit": "e1d55be784416fdfb89635dc407bdd80b4f85255",
+  "reportkit_ref": "v1.3.0-128-ge1d55be",
   "schema_version": 2,
   "tex_engine": "pdflatex",
   "toolchain": {

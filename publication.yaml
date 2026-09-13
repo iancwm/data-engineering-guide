@@ -2,7 +2,8 @@
 # in a ReportKit engine clone. See references/repository-boundary.md there.
 title: Data Engineering Guide
 subtitle: Core concepts, systems, pipelines, and production practices for data engineering
-author: ReportKit
+author: ""
+date: 13 September 2026
 subject: Core concepts, systems, pipelines, and production practices for data engineering.
 keywords: data engineering, data systems, pipelines, storage, orchestration, data quality
 disclaimer: Educational material only. Verify examples against current documentation; this guide is not operational, financial, legal, or security advice.

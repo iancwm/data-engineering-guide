@@ -392,6 +392,21 @@ owns the meaning of derived models and their grain.
 confusing Parquet with table transactions, and treating raw files as a governed
 curated model all create costs that later transformations cannot hide.
 
+## Checkpoint: Partition Pruning Under a Different Filter
+
+::: practice
+**Practice.** `curated_trades` is partitioned by `event_date` and
+`event_hour`, both derived from `event_timestamp`. Take the query in Listing
+sec03-parquet-partition-query and rewrite its `WHERE` clause to filter on
+`ingested_at` instead of `event_timestamp`, keeping the same UTC bounds.
+
+1. Predict which partitions the engine can skip for the rewritten query.
+2. Explain why the answer differs from the original query.
+3. Name one situation, from the late-data material in Section 2, where
+   `event_timestamp` and `ingested_at` would place the same row in different
+   partitions.
+:::
+
 ## Storage Design Checklist
 
 Before implementing a storage layer, define:
@@ -413,3 +428,10 @@ Before implementing a storage layer, define:
 - cost monitoring and ownership.
 
 Good storage design makes later work easier. Poor storage design turns every transformation, query, quality check, and dashboard into an argument with the physical layout of the data.
+
+## Further Learning
+
+- Apache Parquet documentation, ["Overview"](https://parquet.apache.org/docs/overview/), *Apache Parquet documentation*. Accessed 18 September 2026. The columnar-format reference behind the File Formats and row-versus-column discussion above.
+- Apache Iceberg documentation, ["Introduction"](https://iceberg.apache.org/docs/latest/), *Apache Iceberg documentation*. Accessed 18 September 2026. Covers the atomic commits, snapshot isolation, schema and partition evolution, and time travel listed under Open Table Formats.
+- Delta Lake documentation, ["Welcome to the Delta Lake Documentation"](https://docs.delta.io/latest/delta-intro.html), *Delta Lake documentation*. Accessed 18 September 2026. Describes the transaction log and ACID guarantees behind the alternative table-format choice named in the capstone architecture.
+- DuckDB documentation, ["Hive Partitioning"](https://duckdb.org/docs/current/data/partitioning/hive_partitioning.html), *DuckDB documentation*. Accessed 18 September 2026. Documents the `hive_partitioning` option and filter pushdown used in the partition-pruned query listing above.

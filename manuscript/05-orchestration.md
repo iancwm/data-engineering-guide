@@ -359,6 +359,22 @@ data interval, retrying deterministic validation errors, hiding transformation
 logic in scheduler callbacks, and launching a backfill without concurrency or
 source-rate controls all make recovery less safe.
 
+## Checkpoint: Should This Failure Retry?
+
+::: practice
+**Practice.** In the hourly capstone DAG (Listing sec05-capstone-dag), the
+`validate_and_publish` task fails because it finds duplicate trade
+identifiers inside the hour's partition. The DAG's `default_args` give every
+task 2 retries with a 5-minute delay.
+
+1. Predict what happens across both retry attempts.
+2. Decide whether this failure should consume the retry budget, and justify
+   it using the transient-versus-deterministic distinction from the Retries
+   and Timeouts section.
+3. State what should happen instead: which downstream step should stay
+   blocked, and who should be notified.
+:::
+
 ## Orchestration Design Checklist
 
 Before implementing a workflow, define:
@@ -377,3 +393,10 @@ Before implementing a workflow, define:
 - logs, run metadata, alert routing, and a repair runbook.
 
 A workflow is production-ready when it can explain what it is processing, wait for the right inputs, fail without corrupting outputs, retry within a bounded policy, recover historical intervals, and avoid overwhelming its dependencies. The orchestration layer should make those guarantees visible rather than leaving them implicit in task code.
+
+## Further Learning
+
+- Apache Airflow documentation, ["DAGs"](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html), *Apache Airflow documentation*. Accessed 18 September 2026. Explains `catchup` and running a DAG across past intervals, the mechanism behind the Backfills and Reprocessing section above.
+- Apache Airflow documentation, ["Tasks"](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html), *Apache Airflow documentation*. Accessed 18 September 2026. Documents `retries`, `retry_delay`, and `execution_timeout`, the parameters set in the capstone DAG listing's `default_args`.
+- Apache Airflow documentation, ["Deferrable Operators & Triggers"](https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/deferring.html), *Apache Airflow documentation*. Accessed 18 September 2026. Describes how a deferrable sensor releases its worker slot while waiting, the rescheduling mode named in the Sensors and Data Assets section.
+- Dagster documentation, ["Defining Assets"](https://docs.dagster.io/concepts/assets/software-defined-assets), *Dagster documentation*. Accessed 18 September 2026. Shows the asset-oriented model referenced in the Data-Aware Scheduling section and the orchestration-tooling table.

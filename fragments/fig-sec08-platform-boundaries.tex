@@ -1,13 +1,13 @@
 \begin{diagram}[
   type=architecture,
   label={fig:sec08-platform-boundaries},
-  caption={Conceptual platform boundaries remain useful even when one vendor product implements several of them; each boundary still owns a distinct responsibility and failure mode.},
+  caption={Eight platform capability boundaries run from source systems to serving; a single vendor product commonly spans several adjacent boundaries, but ownership, security posture, cost, and exit cost still attach to each boundary separately.},
   source={Author's synthesis.},
-  description={Eight ordered capability layers run from source systems and ingestion transport through storage and table semantics, processing, orchestration, quality and observability, governance, and serving. A vendor-span annotation says that one product may implement several layers while ownership, security, cost, and exit planning remain explicit. Representative artifacts are shown without prescribing vendors.}
+  description={Eight ordered capability layers, top to bottom: Source (events, APIs, databases); Transport (producer, broker, raw landing); Storage and tables (Parquet, table format, catalog); Processing (SQL, models, aggregates); Orchestration (schedule, retry, backfill); Quality (tests, freshness, observability); Governance (owner, contract, access policy); Serving (dashboard, feature, application). An annotation gives a concrete example of vendor span: a managed warehouse commonly implements Storage and tables, Processing, and Serving in one product, while Orchestration, Quality, and Governance still need separate configuration and an accountable owner.}
 ]
 \begin{reportarchitecture}[
   width=15.2,
-  annotation={Vendor span: one product may implement several layers; ownership, security, cost, and exit planning still remain explicit.},
+  annotation={Example span: a managed cloud warehouse commonly implements Storage and tables, Processing, and Serving in one product. Orchestration, Quality, and Governance still need separate configuration and an accountable owner.},
   annotation-position=top
 ]
   \layer{Source}{events, APIs, databases}

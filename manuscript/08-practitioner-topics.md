@@ -120,15 +120,24 @@ particular vendor is required.
 
 [[REPORTKIT-VISUAL:fig:sec08-platform-boundaries]]
 
-The practical boundary list is: source systems generate facts; ingestion and
-transport move and buffer them; storage and table formats retain them; query
-and processing compute results; orchestration controls when work runs; quality
-and observability test and explain behavior; governance documents and controls
-use; and serving delivers a contract to a consumer. A warehouse or managed
-lakehouse may bundle several of these, but bundling does not make the
-responsibilities interchangeable.
+Reading the figure top to bottom traces the same path the capstone pipeline
+follows: `raw_trades` and its manifest arrive through the source and transport
+boundaries; `curated_trades` is produced at the storage and processing
+boundaries; the orchestrator decides when `fct_hourly_ohlcv` is rebuilt;
+quality and governance boundaries test and document that table before it is
+trusted; and serving delivers it to a dashboard. A warehouse or managed
+lakehouse may bundle several of these boundaries into one product, but
+bundling does not make the responsibilities interchangeable: an outage still
+has to be diagnosed at a specific boundary, and a vendor switch still has to
+be scoped one boundary at a time.
 
 The examples are illustrative, not endorsements. A warehouse may provide storage, query execution, access control, and monitoring in one service. An open table format may provide table semantics on object storage but still need a query engine and catalog. Name the capability first so that a product change does not change the architecture by accident.
+
+::: practice
+**Practice.** The `fct_hourly_ohlcv` dashboard is showing BTC/USD prices that are six hours old. The page loads normally and shows no error to the viewer. Using the platform-boundaries figure, which boundary should the on-call engineer check first — ingestion, storage, orchestration, or serving — and why?
+
+**Answer.** Check orchestration first. A dashboard that loads without error but shows stale data is the signature of a scheduled job that stopped running, is stuck, or silently skipped a run, not of a serving-layer bug: serving only renders whatever `fct_hourly_ohlcv` currently holds. Confirm whether the job that rebuilds `fct_hourly_ohlcv` actually ran and completed on schedule. If it did, move one boundary upstream and check ingestion for whether new `raw_trades` records are still landing; only after both come back healthy should storage or serving be suspected.
+:::
 
 ## Selecting Tools and Managing Trade-offs
 
@@ -253,3 +262,14 @@ A business-critical pipeline should have, at an appropriate level of rigor:
 - a short runbook explaining common failures and escalation paths.
 
 Not every pipeline needs every platform feature. The standard should be proportional to the harm caused by stale, incorrect, unavailable, exposed, or unexpectedly expensive data. A clear risk decision is stronger than an accidental omission.
+
+## Further Learning
+
+These sources go deeper on specific claims made in this section. They
+supplement, and do not duplicate, the bibliography in Section 11.
+
+- NIST. [*Security and Privacy Controls for Information Systems and Organizations* (SP 800-53 Rev. 5)](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final). National Institute of Standards and Technology, 2020 (updated 2023). A primary reference for the least-privilege, audit, and classification controls described under Security, Privacy, and Compliance.
+- Amazon Web Services. [“Security Pillar — AWS Well-Architected Framework.”](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html) *AWS Well-Architected Framework*. Accessed 18 September 2026. A worked reference architecture organizing identity, network, data, and workload controls into layers, similar to the security-layers figure.
+- Marz, Nathan, and James Warren. *Big Data: Principles and Best Practices of Scalable Real-Time Data Systems*. Manning, 2015. The primary source for the Lambda architecture pattern in the architecture-patterns table.
+- Kreps, Jay. [“Questioning the Lambda Architecture.”](https://www.oreilly.com/radar/questioning-the-lambda-architecture/) *O'Reilly Radar*, 2 July 2014. Accessed 18 September 2026. The original argument for the single-path, replay-based Kappa architecture in the architecture-patterns table.
+- Dehghani, Zhamak. [“How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh.”](https://martinfowler.com/articles/data-monolith-to-mesh.html) *martinfowler.com*, 20 May 2019. Accessed 18 September 2026. The original data mesh article that introduced the ownership model summarized in the architecture-patterns table, distinct from the 2022 book already cited in Section 11.

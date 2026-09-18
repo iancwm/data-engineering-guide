@@ -1,15 +1,18 @@
 \begin{diagram}[
   type=architecture,
   label={fig:sec08-security-layers},
-  caption={A conceptual layering of security controls, not a prescriptive reference architecture; a given tool can implement controls in more than one layer.},
+  caption={Security controls sit at five layers along the access path from identity to consumer, not in one undifferentiated "secure the warehouse" bucket; a single vendor tool commonly spans two or three adjacent layers, but each layer's evidence and failure must still be attributable on its own.},
   source={Author's synthesis.},
-  description={Five stacked layers, top to bottom: Identity (Identity, Secrets); Network (Network); Data (Storage, Classification, Retention, Audit); Application or workload (Processing); Consumers (Consumer). Each layer is a category of control, not a specific product.}
+  description={Five stacked layers, top to bottom, along the access path from identity to consumer: Identity (Authentication, authorization, Secrets); Network (Segmentation, private access); Data (Storage, Classification, Retention, Audit); Application or workload (Processing); Consumers (Access policies). An annotation states that a cloud identity platform commonly spans Identity and Network, and a warehouse policy engine commonly spans Data and Consumers, while audit evidence still has to be attributed to one layer.}
 ]
-\begin{reportarchitecture}
-  \layer{Identity}{Identity, Secrets}
-  \layer{Network}{Network}
+\begin{reportarchitecture}[
+  annotation={Example span: a cloud identity platform often covers Identity and Network together; a warehouse policy engine often covers Data and Consumers together. Audit evidence still has to be attributed to one layer.},
+  annotation-position=top
+]
+  \layer{Identity}{Authentication, authorization, Secrets}
+  \layer{Network}{Segmentation, private access}
   \layer{Data}{Storage, Classification, Retention, Audit}
   \layer{Application or\\ workload}{Processing}
-  \layer{Consumers}{Consumer}
+  \layer{Consumers}{Access policies}
 \end{reportarchitecture}
 \end{diagram}

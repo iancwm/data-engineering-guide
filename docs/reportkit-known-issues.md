@@ -190,3 +190,53 @@ have `publication_build.py` check for `<output-root>/.venv` up front (before
 starting the compile passes) and fail fast with the `setup.sh` remediation
 from Issue 2, rather than discovering the missing venv only at the last
 step.
+
+## 6. Publication-details page prints "Classification: ." even when no
+   classification is set
+
+The generated `publication-template.tex` wraps the classification line in
+`\ifx\RKPubClassification\empty\else ... \fi`, but `metadata.tex` defines it
+with `\newcommand{\RKPubClassification}{}` (an empty-replacement-text macro),
+not `\let\RKPubClassification\empty`. `\ifx` compares meanings, not expanded
+content, so a `\newcommand`-defined empty macro is never `\ifx`-equal to the
+`\empty` primitive: the guard always evaluates false, and every publication
+that leaves `classification` unset (this one included) prints a bare
+"Classification: ." on its publication-details page. Confirmed visually in
+this revision's page 2. Suggested upstream fix: guard on
+`\ifx\RKPubClassification\@empty` after `\edef`-expanding it, or simpler,
+have `metadata.tex`'s generator skip emitting the `\newcommand` (and the
+surrounding conditional block) entirely when the source `publication.yaml`
+has no `classification` key, rather than relying on an empty-string
+comparison.
+
+## 7. Unicode arrow ("→") inside inline code loses its glyph on PDF text
+   extraction (font ToUnicode gap)
+
+Several capstone-handoff sentences use a literal "→" (U+2192) inside inline
+code spans, e.g. `` `raw_trades + manifest → curated_trades + catalog` ``.
+The PDF renders these visually correctly, but extracting the PDF's text
+(`pdftotext`) turns each arrow into a stray `\x19` control character instead
+of `→` or even a plain hyphen fallback:
+
+```
+$ pdftotext -layout data-engineering-guide.pdf - | cat -A | grep -o '.\{20\}\x19.\{20\}' | head -1
+The capstone handoff is raw_trades + manifest ^Y curated_trades + catalog...
+```
+
+Root cause: the monospace/code font's embedded subset does not carry a
+ToUnicode CMap entry mapping that glyph back to U+2192, so any consumer that
+reads the PDF's text layer (search, copy-paste, screen readers, this guide's
+own QA text-extraction check) sees a control character instead of the arrow.
+This does not affect on-screen/printed rendering, only text-layer fidelity,
+and compounds the accessibility gap in Issue 3. Confirmed pre-existing (not
+introduced by this revision) and present in every inline-code arrow across
+the manuscript, not isolated to any one section. Suggested upstream fix: has
+two independent parts, either of which resolves it -- (a) ensure the code
+font's font-encoding setup preserves/declares a ToUnicode mapping for U+2192
+(a `\pdfglyphtounicode` entry, or selecting a code font/encoding that already
+carries one), or (b) note in this guide's own authoring convention that
+inline code should prefer the ASCII `->` (which pandoc/LaTeX do not silently
+transform) over a literal "→" character when the sentence is not itself a
+runnable command. (b) is a publication-content decision, not an engine fix,
+and is out of scope for this pass; recorded here because the root cause is
+font/encoding-level.

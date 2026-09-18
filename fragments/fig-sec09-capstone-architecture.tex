@@ -2,11 +2,11 @@
   type=swimlane,
   width=\textwidth,
   label={fig:sec09-capstone-architecture},
-  caption={The cumulative capstone architecture connects a public market stream to named durable assets, model grains, quality and replay controls, and consumer contracts.},
+  caption={The cumulative capstone architecture connects a public market stream to named durable assets, model grains, quality and replay controls, and consumer contracts; the trust boundary sits directly between the data path and consumers so the final handoff never crosses another lane's node text.},
   source={Author's synthesis.},
-  description={Four lanes distinguish the data path, control path, trust boundary, and consumers. Data flows from a public BTCUSDT stream through a producer/broker to the raw\_trades and manifest artifacts, then to curated\_trades and catalog, then to the stg/fct/OHLCV models. Scheduling and replay control the run; tests and quarantine control publication; a contract and owner support dashboard, model, and report consumers.}
+  description={Four lanes, top to bottom: control path, data path, trust boundary, and consumers. Scheduling and replay in the control path oversee the run without crossing the other lanes. Data flows from a public BTCUSDT stream through a producer/broker to the raw\_trades and manifest artifacts, then to curated\_trades and catalog, then to the stg/fct/OHLCV models, all within the data path. A labeled handoff carries the model output one lane down into the trust boundary's contract node, where it joins the tests-and-freshness signal that already flows there from a separate, dashed and explicitly labeled failure edge into quarantine and runbook evidence. Only once the contract has both signals does a solid flow edge carry that data down the final, single-lane step into the consumers lane, to a dashboard, model, or report; that final step shares the contract's column, so it never passes through the control path or crosses any other lane's node text.}
 ]
-\begin{reportswimlane}[lanes={Data path,Control path,Trust boundary,Consumers},lane spacing=1.45,width=14.7,columns=6]
+\begin{reportswimlane}[lanes={Control path,Data path,Trust boundary,Consumers},lane spacing=1.45,width=14.7,columns=6]
   \lanestep{source}{Data path}{BTCUSDT stream}{1}
   \lanestep{producer}{Data path}{producer/broker}{2}
   \lanestep{raw}{Data path}{raw\_trades + manifest}{3}
@@ -22,9 +22,10 @@
   \laneflow{producer}{raw}
   \laneflow{raw}{curated}
   \laneflow{curated}{hourly}
-  \laneflow{hourly}{serve}
   \handoff{schedule}{publish}
-  \handoff{quality}{quarantine}
+  \handoff[fail]{quality}{quarantine}
   \handoff{quality}{contract}
+  \handoff[ready]{hourly}{contract}
+  \laneflow{contract}{serve}
 \end{reportswimlane}
 \end{diagram}

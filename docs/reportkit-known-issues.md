@@ -50,22 +50,30 @@ The PDF produced by `publication_build.py` (both draft and `--profile
 release` builds) is not a Tagged PDF. Evidence:
 
 ```
-$ pdfinfo <release-pdf>
-...
-Tagged:             no
-...
+$ pdfinfo build/combined/data-engineering-guide.pdf
+Title:           Data Engineering Guide
+Subject:         Core concepts, systems, pipelines, and production practices for data engineering.
+Keywords:        data engineering, data systems, pipelines, storage, orchestration, data quality
+Author:          Ian Chong
+Creator:         LaTeX with hyperref
+Producer:        pdfTeX-1.40.25
+Custom Metadata: yes
+Metadata Stream: no
+Tagged:          no
+UserProperties:  no
+Suspects:        no
+Pages:           81
+Page size:       595.276 x 841.89 pts (A4)
+PDF version:     1.5
 ```
 
-**Status of this evidence:** at the time this entry was written, no PDF had
-yet been produced by the in-progress full engine build for this publication,
-so the `Tagged: no` line above is the expected/documented result based on
-ReportKit's LaTeX templates (`latex_templates/*.cls`/`*.sty` do not load a
-tagging package such as `tagpdf`/`accessibility` or invoke `\DocumentMetadata`
-with `tagged=true`), not a value captured from a run against this
-publication's actual output. `pdfinfo` (poppler-utils) has been installed in
-this environment so this can be re-verified directly: once a build exists
-under `build/` or `output/`, run `pdfinfo <path-to-pdf>` and paste the real
-`Tagged:` line here in place of this note.
+**Status of this evidence:** captured from a real `--profile release`
+combined build of this publication (two consecutive clean builds, zero
+blocking diagnostics) run against the pinned ReportKit commit
+(`e1d55be784416fdfb89635dc407bdd80b4f85255`). `Tagged: no` is confirmed, not
+inferred -- the author/title/subject/keywords metadata (also part of this
+same accessibility/credibility pass) round-trips correctly, but there is no
+structure tree at all beneath it.
 
 **Desired outcome.** The release PDF should be a PDF/UA or Tagged PDF with a
 complete accessible structure tree, specifically:
@@ -113,3 +121,72 @@ unaffected. It does block any claim that the release PDF is "fully
 accessible": until the structure tree exists, screen-reader users cannot
 navigate the PDF by heading, get meaningful figure/table announcements, or
 rely on the reading order matching the visual layout.
+
+## 4. Pinned Libertinus font assets require manual TDS extraction and
+   `updmap-sys` registration that no script performs
+
+`reportkit.lock`'s `toolchain.expected.fonts` pins
+`font_data/reportkit-libertinus-fonts.tar.gz` (a proper TDS-structured
+archive: `tex/latex/libertinus/`, `tex/latex/libertinust1math/`,
+`fonts/{tfm,type1,afm,vf,enc,map}/...`), but nothing under
+`publication_pipeline/scripts/` (including `setup.sh`, which only creates
+the Python render venv) extracts this archive into a TeX tree or registers
+its two map files (`fonts/map/dvips/libertinus-type1/libertinus.map` and
+`fonts/map/dvips/libertinust1math/libertinust1math.map`) with `updmap-sys`.
+
+Symptom without that step: `\documentclass{reportkit}` (which
+`\RequirePackage{libertinus}` in `reportkit-theme-default.sty`) fails
+immediately with `! LaTeX Error: File 'libertinus.sty' not found.` once the
+font isn't on `TEXMFLOCAL`/`TEXMFHOME` at all. Once the archive is manually
+extracted (e.g. into `/usr/local/share/texmf` + `texhash`), `libertinus.sty`
+loads, but compilation still fails with a *different*, much harder to
+diagnose fatal at the very first page shipout (`\RKContents`, before any
+publication content is processed):
+
+```
+pdfTeX error (font expansion): auto expansion is only possible with scalable fonts.
+<argument> ...shipout:D \box_use:N \l_shipout_box
+==> Fatal error occurred, no output PDF file produced!
+```
+
+Root cause: `reportkit-core.sty` loads `microtype` with its default
+font-expansion behavior, which requires the active fonts' Type 1 outlines to
+be registered in `pdftex.map`; the Libertinus TDS archive ships its map
+files, but they are inert until enabled with `updmap-sys --enable
+Map=<name>.map`. Two calls resolve it:
+
+```
+sudo updmap-sys --enable Map=libertinus.map
+sudo updmap-sys --enable Map=libertinust1math.map
+```
+
+Neither the LaTeX error text nor the build-report diagnostic (`RK_MISSING_FONT`
+/ `RK_LATEX_ERROR`) names font-map registration as the fix, so an operator
+who only extracts the TDS archive (the seemingly-complete fix for the first
+error) hits a second, unrelated-looking fatal with no pointer back to fonts
+at all. Suggested upstream fix: have `setup.sh` (or a new
+`setup-fonts.sh`) extract `font_data/reportkit-libertinus-fonts.tar.gz` into
+the venv-local or a project-local `TEXMFHOME`/`TEXMFLOCAL` tree and run the
+two `updmap-sys --enable` calls above as part of environment bootstrap,
+rather than leaving font installation as an undocumented manual step; at
+minimum, surface a specific `RK_FONT_MAP_NOT_REGISTERED` diagnostic instead
+of the generic pdfTeX expansion fatal.
+
+## 5. `publication_build.py`'s page-render step ignores `--output-root`'s
+   own venv when a fresh `<output-root>` is reused
+
+Deleting and recreating only part of an output tree (for example `rm -rf
+<output-root>/combined` to force a clean recompile while intentionally
+keeping `<output-root>/.venv` from an earlier `setup.sh` run) works
+correctly. But `rm -rf <output-root>` in full, followed by re-running
+`publication_build.py` without re-running `setup.sh` first, produces the
+same `RK_RENDER_FAILED` / `ModuleNotFoundError: No module named 'pymupdf'`
+failure documented in Issue 2 above, because the LaTeX compile and validate
+steps succeed and only the final page-render step needs the venv -- so the
+build gets most of the way through (gate: passed on the PDF compile itself)
+before failing at rendering, which can read as a flaky or partial failure
+rather than the same missing-venv cause as Issue 2. Suggested upstream fix:
+have `publication_build.py` check for `<output-root>/.venv` up front (before
+starting the compile passes) and fail fast with the `setup.sh` remediation
+from Issue 2, rather than discovering the missing venv only at the last
+step.

@@ -232,7 +232,7 @@ sums that column into an hourly traded-volume tile.
    that would need to happen before this change could ship safely.
 :::
 
-## Further Learning
+## Further Learning {#sec07-further-learning}
 
 These sources go deeper on specific claims made in this section and are
 separate from the Section 11 bibliography, which covers the guide's core

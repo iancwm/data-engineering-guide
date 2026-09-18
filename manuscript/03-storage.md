@@ -429,7 +429,7 @@ Before implementing a storage layer, define:
 
 Good storage design makes later work easier. Poor storage design turns every transformation, query, quality check, and dashboard into an argument with the physical layout of the data.
 
-## Further Learning
+## Further Learning {#sec03-further-learning}
 
 - Apache Parquet documentation, ["Overview"](https://parquet.apache.org/docs/overview/), *Apache Parquet documentation*. Accessed 18 September 2026. The columnar-format reference behind the File Formats and row-versus-column discussion above.
 - Apache Iceberg documentation, ["Introduction"](https://iceberg.apache.org/docs/latest/), *Apache Iceberg documentation*. Accessed 18 September 2026. Covers the atomic commits, snapshot isolation, schema and partition evolution, and time travel listed under Open Table Formats.

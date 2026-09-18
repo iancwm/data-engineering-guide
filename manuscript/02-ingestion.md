@@ -396,7 +396,7 @@ Before implementing an ingestion pipeline, define:
 
 An ingestion pipeline is production-ready when it can fail, retry, replay, and explain what happened. The raw movement of bytes is only the beginning.
 
-## Further Learning
+## Further Learning {#sec02-further-learning}
 
 - Apache Kafka documentation, ["Message Delivery Semantics"](https://kafka.apache.org/documentation/#semantics), *Apache Kafka documentation*. Accessed 18 September 2026. Expands on the at-most-once, at-least-once, and exactly-once distinctions used in the delivery-semantics table above.
 - Apache Kafka documentation, ["Producer Configs"](https://kafka.apache.org/documentation/#producerconfigs), *Apache Kafka documentation*. Accessed 18 September 2026. Documents the idempotent-producer setting referenced in the Idempotency section's discussion of safe retries.

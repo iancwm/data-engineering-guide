@@ -305,7 +305,7 @@ Before publishing a production dataset, define:
 - downstream impact when data is delayed or wrong;
 - incident review and prevention process.
 
-## Further Learning
+## Further Learning {#sec06-further-learning}
 
 - dbt Labs documentation, ["About dbt tests"](https://docs.getdbt.com/docs/build/data-tests), *dbt Developer Hub*. Accessed 18 September 2026. Documents the generic and singular test types behind the `stg_trades` and `fct_hourly_ohlcv` YAML tests in the capstone listing above.
 - dbt Labs documentation, ["About continuous integration jobs"](https://docs.getdbt.com/docs/deploy/continuous-integration), *dbt Developer Hub*. Accessed 18 September 2026. Describes the CI-triggered test run behind the Shift-Left Quality section's claim about running dbt tests before merging model changes.

@@ -394,7 +394,7 @@ Before implementing a workflow, define:
 
 A workflow is production-ready when it can explain what it is processing, wait for the right inputs, fail without corrupting outputs, retry within a bounded policy, recover historical intervals, and avoid overwhelming its dependencies. The orchestration layer should make those guarantees visible rather than leaving them implicit in task code.
 
-## Further Learning
+## Further Learning {#sec05-further-learning}
 
 - Apache Airflow documentation, ["DAGs"](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html), *Apache Airflow documentation*. Accessed 18 September 2026. Explains `catchup` and running a DAG across past intervals, the mechanism behind the Backfills and Reprocessing section above.
 - Apache Airflow documentation, ["Tasks"](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html), *Apache Airflow documentation*. Accessed 18 September 2026. Documents `retries`, `retry_delay`, and `execution_timeout`, the parameters set in the capstone DAG listing's `default_args`.

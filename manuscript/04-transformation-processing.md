@@ -491,7 +491,7 @@ Before implementing a transformation pipeline, define:
 
 Transformation is successful when the output is not only technically valid, but semantically correct, reproducible, tested, and understandable.
 
-## Further Learning
+## Further Learning {#sec04-further-learning}
 
 - **[About incremental models](https://docs.getdbt.com/docs/build/incremental-models)**, dbt Labs official documentation (accessed 2026-09-18). Goes deeper on the `is_incremental()` pattern and lookback-window strategies used in `lst:sec04-deduplicate-trades`.
 - **[The `ref()` function](https://docs.getdbt.com/reference/dbt-jinja-functions/ref)**, dbt Labs official documentation (accessed 2026-09-18). Explains how `ref()` builds the model dependency DAG referenced throughout this section's dbt discussion.

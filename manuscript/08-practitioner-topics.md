@@ -263,7 +263,7 @@ A business-critical pipeline should have, at an appropriate level of rigor:
 
 Not every pipeline needs every platform feature. The standard should be proportional to the harm caused by stale, incorrect, unavailable, exposed, or unexpectedly expensive data. A clear risk decision is stronger than an accidental omission.
 
-## Further Learning
+## Further Learning {#sec08-further-learning}
 
 These sources go deeper on specific claims made in this section. They
 supplement, and do not duplicate, the bibliography in Section 11.

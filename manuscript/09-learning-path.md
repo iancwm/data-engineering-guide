@@ -117,7 +117,7 @@ Milestone 6 already produces a job-ready, generalist portfolio project. Mileston
 
 **Interview question.** "Why did you go deeper on this track instead of the others, and what trade-off did you learn about that the generalist path wouldn't have taught you?"
 
-## Further Learning
+## Further Learning {#sec09-further-learning}
 
 - GitHub Docs. [“About READMEs.”](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes) *GitHub Docs*. Accessed 18 September 2026. A concrete guide to writing the README that Milestone 6 treats as required portfolio evidence.
 - Martin, Donne. [“The System Design Primer.”](https://github.com/donnemartin/system-design-primer) *GitHub repository*. Accessed 18 September 2026. A widely used, continually maintained study guide for the scalability and trade-off discussions that come up in data engineering and platform interviews.

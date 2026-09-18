@@ -43,3 +43,73 @@ but the error message itself doesn't point there. Suggested upstream fix:
 have `build-report.json`'s remediation text for `RK_RENDER_FAILED` mention
 `setup.sh` by name when the underlying stderr contains
 `ModuleNotFoundError`.
+
+## 3. Release PDF is untagged and does not expose an accessible structure tree
+
+The PDF produced by `publication_build.py` (both draft and `--profile
+release` builds) is not a Tagged PDF. Evidence:
+
+```
+$ pdfinfo <release-pdf>
+...
+Tagged:             no
+...
+```
+
+**Status of this evidence:** at the time this entry was written, no PDF had
+yet been produced by the in-progress full engine build for this publication,
+so the `Tagged: no` line above is the expected/documented result based on
+ReportKit's LaTeX templates (`latex_templates/*.cls`/`*.sty` do not load a
+tagging package such as `tagpdf`/`accessibility` or invoke `\DocumentMetadata`
+with `tagged=true`), not a value captured from a run against this
+publication's actual output. `pdfinfo` (poppler-utils) has been installed in
+this environment so this can be re-verified directly: once a build exists
+under `build/` or `output/`, run `pdfinfo <path-to-pdf>` and paste the real
+`Tagged:` line here in place of this note.
+
+**Desired outcome.** The release PDF should be a PDF/UA or Tagged PDF with a
+complete accessible structure tree, specifically:
+
+- a heading hierarchy (`/H1`, `/H2`, ...) matching the manuscript's H1/H2
+  structure (`# Section N - ...`, `## ...`);
+- a logical reading order (`/StructTreeRoot` order) matching the visual
+  layout, including multi-column or floated content;
+- `/Figure` structure elements for each diagram, wired to the figure's
+  accessible text (see below);
+- `/Table` structure elements for the manuscript's pipe tables, with header
+  cells marked as `/TH` so a screen reader can announce row/column context;
+- `/Code` (or an equivalent marked-content role) for fenced code listings, so
+  they are not read as undifferentiated body text;
+- tagged links (`/Link` structure elements with real `/Contents` or
+  `/Alt` text), not bare, unlabeled hyperlink annotations.
+
+**Figure descriptions currently do not reach the PDF.** Each
+`[[REPORTKIT-VISUAL:fig:<slug>]]` sentinel's corresponding fragment already
+carries a `description=` field intended as the figure's alt text (see the
+fragments under `fragments/` in this repository). Today that text has nowhere
+to land: because the PDF has no structure tree at all, there is no `/Figure`
+element for a `description=` value to attach to as `/Alt` text, so the
+content is present in the source but inaccessible in the shipped PDF. Fixing
+the tagging gap must therefore also thread `description=` through to each
+image's structure-element alt text, not just add a structure tree in the
+abstract.
+
+**This must be fixed upstream, not patched here.** Per this engine's own
+repository-boundary convention
+(`/home/user/iancwm/report-kit/references/repository-boundary.md`: "If you
+are changing a `.cls`/`.sty` file ... you are working **on the engine**"),
+PDF tagging is a document-class/style concern — it has to be implemented in
+ReportKit's `.cls`/`.sty` files (e.g. via `\DocumentMetadata{tagged=true,
+...}` plus explicit `\Alt{...}` text at each figure/table insertion point in
+the class, driven by the fragment's `description=` field), not worked around
+with publication-local TeX patches in this manuscript or its fragments.
+Publication-local patches are not an acceptable permanent solution: they
+would have to be re-applied by hand on every ReportKit upgrade and would
+leave every other ReportKit-built publication still untagged.
+
+**Impact.** This does not block the rest of this revision's content or
+visual work — text, diagrams, tables, and the build itself are otherwise
+unaffected. It does block any claim that the release PDF is "fully
+accessible": until the structure tree exists, screen-reader users cannot
+navigate the PDF by heading, get meaningful figure/table announcements, or
+rely on the reading order matching the visual layout.

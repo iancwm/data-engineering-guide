@@ -1,26 +1,53 @@
 \begin{diagram}[
   type=flow,
   label={fig:sec01-lifecycle},
-  caption={The data lifecycle from source systems to consumers; quality, metadata, security, and observability apply across every stage.},
+  caption={The data lifecycle proceeds from sources to serving, but it is a feedback loop rather than a rigid one-way chain: quality and reliability, metadata and governance, observability, security, and cost are cross-cutting concerns that apply across every stage, not steps that happen only after orchestration.},
   source={Author's synthesis.},
-  description={A top-down flow of eight stages in reading order: Sources, Ingestion, Storage, Processing and Transformation, Orchestration, Quality and Reliability, Metadata and Governance, and Serving. Observability, security, and cost are not drawn as separate nodes because they apply across every stage; the surrounding text states this explicitly.},
-  minspace={0.62\textheight}
+  description={A top-down flow of six sequential stages in reading order: Sources, Ingestion, Storage, Processing and Transformation, Orchestration, and Serving. A dashed band drawn behind all six stages represents cross-cutting concerns -- quality and reliability, metadata and governance, observability, security, and cost -- that apply across every stage rather than following it as a seventh or eighth step.},
+  minspace={0.52\textheight}
 ]
-% Eight stages are too dense for the default horizontal spacing, so this
-% diagram places them directly with \RKNode/\flowedge in a vertical column.
+% Six stages are too dense for the default horizontal spacing, so this
+% diagram places them directly with \RKNode/\flowedge in a vertical column,
+% as before. Quality/reliability and metadata/governance were previously
+% drawn as sequential stages 6 and 7, which wrongly implied they happen only
+% after orchestration. They are cross-cutting (so are observability,
+% security, and cost, which the caption already excluded from the chain), so
+% they are drawn once, behind the whole chain, as a shaded dashed band with
+% its own label rather than as ordinary flow nodes. The band is drawn first
+% so the sequential nodes and edges render on top of it and its label sits
+% clear of every node's text (see the x-offset below).
+\node[
+  fill=Muted!8,
+  draw=Muted,
+  dashed,
+  thick,
+  rounded corners=4pt,
+  anchor=north west,
+  minimum width=6.8cm,
+  minimum height=11.05cm,
+  inner sep=0pt
+] at (-2.4,0.9) {};
+\node[
+  anchor=north,
+  text width=2.4cm,
+  align=left,
+  font=\sffamily\fontsize{6.8}{8.1}\selectfont,
+  text=Muted
+] at (3.1,-4.2) {\textbf{Cross-cutting, every stage:}\\[3pt]
+Quality and\\Reliability\\[3pt]
+Metadata and\\Governance\\[3pt]
+Observability\\[3pt]
+Security\\[3pt]
+Cost};
 \RKNode{sources}{0}{0}{Sources}
 \RKNode{ingestion}{0}{-1.85}{Ingestion}
 \RKNode{storage}{0}{-3.70}{Storage}
 \RKNode{processing}{0}{-5.55}{Processing and Transformation}
 \RKNode{orchestration}{0}{-7.40}{Orchestration}
-\RKNode{quality}{0}{-9.25}{Quality and Reliability}
-\RKNode{governance}{0}{-11.10}{Metadata and Governance}
-\RKNode{serving}{0}{-12.95}{Serving}
+\RKNode{serving}{0}{-9.25}{Serving}
 \flowedge{sources}{ingestion}
 \flowedge{ingestion}{storage}
 \flowedge{storage}{processing}
 \flowedge{processing}{orchestration}
-\flowedge{orchestration}{quality}
-\flowedge{quality}{governance}
-\flowedge{governance}{serving}
+\flowedge{orchestration}{serving}
 \end{diagram}

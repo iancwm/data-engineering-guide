@@ -1,42 +1,37 @@
 # Section 1 - Introduction to Data Engineering
 
-Data engineering is the discipline of making data usable at scale. It sits between raw data-producing systems and the people, models, dashboards, applications, and decisions that depend on that data. A data engineer designs the pipelines, platforms, data models, and operational controls that turn messy, distributed, and fast-changing data into reliable information.
+Data engineering is the discipline of making data usable at scale. It sits between raw data-producing systems and the people, models, and decisions that depend on that data: a data engineer designs the pipelines, platforms, and controls that turn messy, fast-changing data into reliable information.
 
-A simple way to understand the field is to imagine a supply chain. Raw materials arrive from many suppliers, are checked, cleaned, shaped, stored, packaged, and delivered to customers. Data engineering does the same thing for data. It collects data from source systems, validates it, stores it in appropriate systems, transforms it into useful structures, and serves it to downstream consumers.
+A simple way to understand the field is a supply chain: raw materials arrive from many suppliers, are checked, cleaned, stored, and delivered to customers. Data engineering does the same for data -- collecting it, validating it, storing it, transforming it, and serving it to downstream consumers.
 
 The main ideas from the Databricks article ["What Is Data Engineering?"](https://www.databricks.com/blog/what-is-data-engineering) can be summarized as follows:
 
-- Data engineering focuses on building data pipelines that collect, transform, and deliver data for analytics and other uses.
-- Data engineers work with structured, semi-structured, and unstructured data.
-- Data engineering supports business intelligence, machine learning, artificial intelligence, and operational decision-making.
-- The field includes ingestion, storage, transformation, processing, pipeline automation, governance, and quality.
-- Modern architectures often combine the flexibility of data lakes with the management features of warehouses, sometimes called a lakehouse architecture.
-- Data engineering is closely related to, but distinct from, data analysis and data science. Analysts and scientists use data; engineers make the data dependable and accessible.
+- Data engineering builds pipelines -- spanning ingestion, storage, transformation, processing, automation, governance, and quality -- that deliver structured, semi-structured, and unstructured data for BI, ML, AI, and operational decisions.
+- Modern architectures often combine data-lake flexibility with warehouse-like management, sometimes called a lakehouse architecture.
+- Data engineering is related to, but distinct from, data analysis and data science: analysts and scientists use data, while engineers make it dependable and accessible.
 
-The core promise of data engineering is trust. If a dashboard shows revenue, a recommendation model predicts churn, or a compliance report lists customer activity, someone must ensure that the underlying data is complete, timely, correct, secure, and explainable. Data engineering is the practical craft behind that assurance.
+The core promise of data engineering is trust: if a dashboard shows revenue or a model predicts churn, someone must ensure the underlying data is complete, timely, correct, secure, and explainable -- the practical craft behind that assurance.
 
-The lifecycle figure provides the guide's map: sources feed the core stages, serving closes the loop, and quality, metadata, security, and observability span the entire path.
+The lifecycle figure is this guide's map. Sources, ingestion, storage, processing and transformation, orchestration, and serving form the sequential backbone, read top to bottom. The dashed band beside that chain marks quality and reliability, metadata and governance, observability, security, and cost: concerns that apply to every stage in the chain, not a step that runs only after orchestration.
 
 [[REPORTKIT-VISUAL:fig:sec01-lifecycle]]
 
 ## How to Use This Guide
 
-This guide is written for technical beginners and intermediate practitioners who are comfortable reading a little SQL and Python and want to understand how data systems fit together. It assumes basic programming ideas such as variables, functions, files, and command-line use, plus SQL concepts such as `SELECT`, `JOIN`, `GROUP BY`, and filtering. It does not assume prior knowledge of distributed systems, cloud platforms, data warehouses, or production operations; those ideas are introduced as they become useful.
+This guide is written for beginners and intermediate practitioners comfortable with a little SQL and Python. It assumes basic programming and SQL (`SELECT`, `JOIN`, `GROUP BY`, filtering), but not prior knowledge of distributed systems, cloud platforms, or production operations -- those ideas are introduced as they become useful.
 
-The first section is a map of the field. The later sections slow down, explain design choices, and add implementation patterns. You do not need to memorize every product named in the guide. Learn the responsibility a tool fulfils first, then learn one representative implementation and compare alternatives when a real constraint requires it.
+You do not need to memorize every product named here -- learn the responsibility a tool fulfils first, then one representative implementation. The aim is not an enterprise platform in one project, but understanding trade-offs well enough to scale a design as volume, freshness, or compliance needs change.
 
 By the end of this introduction, you should be able to:
 
-- explain how data moves from a source to a consumer and where failures or ambiguity can enter;
+- explain how data moves from source to consumer, and where failures or ambiguity enter;
 - distinguish ingestion, storage, processing, transformation, orchestration, quality, governance, and serving;
-- recognize the main terms used to describe each stage and identify representative tools; and
-- choose a deliberately small architecture for a learning project instead of assembling a tool for every concern.
-
-The later sections are implementation-oriented. They will ask you to build or reason about pipelines, tables, jobs, tests, and serving interfaces. The aim is not to reproduce an enterprise platform in one project; it is to understand the trade-offs well enough to scale the design when the data volume, freshness requirement, number of consumers, or compliance obligation changes.
+- recognize each stage's main terms and representative tools; and
+- choose a deliberately small learning-project architecture instead of a tool for every concern.
 
 ## The Data Engineering Lifecycle
 
-The data engineering lifecycle is the path data follows from creation to use. Different organizations use different terms, but the same core stages appear again and again:
+The data engineering lifecycle is the path data follows from creation to use. Organizations use different terms, but the same core stages recur:
 
 1. Source systems create or expose data.
 2. Ingestion moves data from sources into a controlled platform.
@@ -48,136 +43,131 @@ The data engineering lifecycle is the path data follows from creation to use. Di
 8. Serving layers make data available to analytics, machine learning, applications, and operations.
 9. Observability and operations keep the whole system running in production.
 
-The lifecycle is not always linear. A machine learning system may send predictions back into the platform. A dashboard may reveal quality issues that require changes in ingestion. A new regulatory requirement may force changes to storage, access control, and retention. Data engineering is therefore less like a one-way pipe and more like an operating system for organizational data.
+The lifecycle is not always linear: a machine learning system may send predictions back into the platform, a dashboard may reveal quality issues that require ingestion changes, and a new regulatory requirement may force changes to storage, access control, and retention. Data engineering is therefore less a one-way pipe and more an operating system for organizational data.
 
 ## Lifecycle Overview: Terms, Decisions, and Tools
 
-The lifecycle overview table below is a high-level map. The later sections return to each stage in more detail, including implementation choices and failure modes.
+The table below is a high-level map, with one or two representative tools per stage; Sections 2-8 each carry a fuller tooling-landscape table.
 
 ::: {#tbl:lifecycle-overview}
 Table: Lifecycle overview: stages, decisions, and representative tools.
 
-| Stage | Main purpose | Key terms | Common tools and technologies |
+| Stage | Main purpose | Key terms | Representative tools |
 | --- | --- | --- | --- |
-| Sources | Systems where data originates | source of truth, operational database, API, event, log, file, sensor | PostgreSQL, MySQL, SQL Server, MongoDB, Salesforce, Stripe, Bloomberg, Refinitiv, application logs, CSV, JSON |
-| Ingestion | Move data into the data platform | batch, streaming, CDC, API pull, file landing, idempotency, backpressure, delivery semantics | Python, Airbyte, Fivetran, Kafka, Redpanda, Kinesis, Pub/Sub, Debezium, SFTP, object storage |
-| Storage | Persist raw and processed data | data lake, warehouse, lakehouse, object storage, table format, partitioning, schema evolution | S3, ADLS, GCS, Snowflake, BigQuery, Redshift, Databricks, Delta Lake, Apache Iceberg, Apache Hudi, Parquet |
-| Processing | Compute over data at scale | batch processing, stream processing, distributed compute, micro-batch, stateful processing | Spark, Flink, Beam, SQL engines, Databricks, EMR, Dataflow, Glue |
-| Transformation | Clean, join, model, and aggregate data | ETL, ELT, facts, dimensions, grain, marts, slowly changing dimensions, semantic layer | SQL, dbt, Spark SQL, Python, stored procedures, notebooks |
-| Orchestration | Coordinate workflows | DAG, dependency, schedule, retry, backfill, task, sensor | Airflow, Dagster, Prefect, dbt Cloud, Argo Workflows, Azure Data Factory |
-| Quality and reliability | Prove that data is fit for use | freshness, completeness, uniqueness, validity, reconciliation, anomaly detection, incident | dbt tests, Great Expectations, Soda, Deequ, Monte Carlo, custom SQL/Python checks |
-| Metadata and governance | Make data understandable and controlled | catalog, lineage, ownership, data contract, classification, retention, access policy | DataHub, OpenMetadata, Amundsen, Collibra, Alation, Unity Catalog, Apache Atlas |
-| Serving | Deliver data to consumers | BI mart, feature store, API, reverse ETL, search index, cache, OLAP cube | Tableau, Power BI, Looker, Superset, Feast, Tecton, Elasticsearch, Redis, Postgres, Census, Hightouch |
-| Observability and operations | Run the platform reliably | logs, metrics, traces, SLA, SLO, alert, runbook, cost monitoring | CloudWatch, Prometheus, Grafana, Datadog, OpenTelemetry, ELK, platform-native monitoring |
-| Security and compliance | Protect data and satisfy obligations | IAM, encryption, masking, tokenization, PII, audit log, least privilege | cloud IAM, Vault, KMS, Ranger, Lake Formation, Unity Catalog, row-level and column-level security |
+| Sources | Systems where data originates | source of truth, operational database, event | PostgreSQL, Salesforce, application logs, CSV/JSON |
+| Ingestion | Move data into the data platform | batch, streaming, CDC, idempotency | Airbyte, Kafka, Debezium |
+| Storage | Persist raw and processed data | lakehouse, table format, partitioning | S3/ADLS/GCS, Snowflake, Apache Iceberg, Parquet |
+| Processing | Compute over data at scale | batch, streaming, distributed compute | Spark, Flink, SQL engines |
+| Transformation | Clean, join, model, and aggregate data | ETL, ELT, grain, semantic layer | SQL, dbt, Python |
+| Orchestration | Coordinate workflows | DAG, dependency, retry, backfill | Airflow, Dagster, Prefect |
+| Quality and reliability | Prove that data is fit for use | freshness, completeness, reconciliation | dbt tests, Great Expectations, custom SQL/Python checks |
+| Metadata and governance | Make data understandable and controlled | catalog, lineage, data contract | DataHub, Unity Catalog, Apache Atlas |
+| Serving | Deliver data to consumers | BI mart, feature store, reverse ETL | Tableau/Looker, Feast, Redis |
+| Observability and operations | Run the platform reliably | metrics, SLA/SLO, alert | Prometheus, Grafana, Datadog |
+| Security and compliance | Protect data and satisfy obligations | IAM, masking, least privilege | cloud IAM, Vault, row/column-level security |
 :::
 
-This table is deliberately broad. In a small project, one Python script and a Postgres database may cover several stages. In a large financial, healthcare, or internet-scale company, each row may involve multiple teams and specialized platforms.
+This table is deliberately broad: a small project may cover several rows with one Python script and a Postgres database; a large organization may split each row across a specialized team.
 
 ## Common Confusions
 
 The lifecycle stages are related, but they are not interchangeable. Keep these
 distinctions in mind while reading the rest of the guide:
 
-- A broker is optional. A scheduled API pull into Parquet or a warehouse is
-  often enough; add a broker when low latency, replay, fan-out, or buffering
-  between independent producers and consumers justifies the operating cost.
+- A broker is optional: a scheduled API pull into Parquet or a warehouse is
+  often enough. Add one when low latency, replay, fan-out, or buffering
+  between independent producers and consumers justifies its cost.
 - A warehouse is an analytical system, a lake is a collection of files, and a
   lakehouse adds table management, transactions, and schema controls to lake
-  storage. Workload, governance, cost, and operating capability determine the
-  choice.
-- ETL and ELT describe where transformation happens relative to loading. ETL
-  transforms before loading; ELT loads first and transforms in the destination.
-  Source sensitivity, compute location, latency, and reuse determine which is
-  appropriate.
+  storage. Workload, governance, cost, and operating capability decide.
+- ETL and ELT describe where transformation happens relative to loading: ETL
+  transforms before loading, ELT loads first and transforms in the
+  destination. Source sensitivity, compute location, and reuse decide which
+  fits.
 - Processing is the computation that runs over data; transformation is the
   logic that changes its meaning, shape, or values. A warehouse, Spark, or
-  Flink job can provide processing while SQL, Python, or dbt expresses the
-  transformation.
-- Quality checks the data product—valid values, complete partitions, and unique
-  keys—while observability checks system behavior such as runtime, throughput,
-  resource use, and failures.
-- Transformation defines how data is cleaned or modeled. Orchestration decides
-  when it runs, what it depends on, how it retries, and how it is backfilled.
-- “One row” means the table's grain: the business object or event represented by
-  one record. State the grain and key before joining or aggregating.
-- Tools should be compared by responsibility, deployment model, scale, latency,
-  team, and budget—not by popularity alone. A useful learning stack starts
-  locally with Python, DuckDB, Parquet, and a simple scheduler; add dbt, a
-  broker, or a cloud warehouse only when the exercise requires that capability.
+  Flink job can provide processing while SQL, Python, or dbt expresses it.
+- Quality checks the data product -- valid values, complete partitions, unique
+  keys -- while observability checks system behavior such as runtime,
+  throughput, and failures.
+- Transformation defines how data is cleaned or modeled; orchestration decides
+  when it runs, what it depends on, and how it retries and backfills.
+- "One row" means the table's grain: the business object or event one record
+  represents. State the grain and key before joining or aggregating.
+- Compare tools by responsibility, deployment model, scale, latency, team, and
+  budget -- not popularity alone. A useful learning stack starts locally with
+  Python, DuckDB, Parquet, and a simple scheduler; add dbt, a broker, or a
+  cloud warehouse only when the exercise requires that capability.
 
 ## Sources: Where Data Begins
 
-Source systems are the origin of data. They may be internal applications, vendor feeds, transactional databases, public APIs, partner files, logs, devices, or message streams. The most important early question is whether a source is authoritative. A source of truth is the system that should be trusted when different systems disagree.
+Source systems -- internal applications, vendor feeds, transactional databases, public APIs, partner files, logs, devices, or message streams -- are the origin of data. The most important early question is whether a source is authoritative: a source of truth is the system that should be trusted when others disagree.
 
 Useful source-level terms include:
 
-- operational database: a database that supports a live application or business process;
+- operational database: backs a live application or business process;
 - API: a programmatic interface for retrieving or sending data;
-- event: a record that something happened, such as a click, trade, login, payment, or sensor reading;
+- event: a record that something happened -- a click, trade, or payment;
 - log: a record emitted by software or infrastructure;
-- file feed: a recurring file delivery, often CSV, JSON, XML, Excel, or Parquet;
-- schema: the structure of the data, including fields, types, and relationships.
+- file feed: a recurring file delivery (CSV, JSON, XML, Parquet);
+- schema: the structure of the data -- fields, types, and relationships.
 
-The source stage matters because downstream systems inherit source weaknesses. If the source changes a field definition, emits duplicates, backdates corrections, or omits deletes, the data platform must either handle that behavior or make the limitation visible.
+Downstream systems inherit source weaknesses: if a source changes a field, emits duplicates, backdates corrections, or omits deletes, the platform must handle it or make the limitation visible.
 
 ## Ingestion: Moving Data Reliably
 
-Ingestion moves data from source systems into the data platform. The main design choices are extraction method, latency, reliability, and operational impact on the source.
+Ingestion moves data into the platform; the main design choices are extraction method, latency, reliability, and source impact.
 
 Common ingestion patterns include:
 
-- batch ingestion, where data is copied on a schedule;
-- streaming ingestion, where events are processed continuously;
-- change data capture, or CDC, where database transaction logs are converted into change events;
-- API ingestion, where data is pulled from REST, GraphQL, or vendor APIs;
-- file ingestion, where files are landed in object storage or transferred over SFTP;
-- event ingestion, where producers publish directly into a broker or stream.
+- batch ingestion: data copied on a schedule;
+- streaming ingestion: events processed continuously;
+- change data capture (CDC): transaction logs converted into change events;
+- API ingestion: data pulled from REST, GraphQL, or vendor APIs;
+- file ingestion: files landed in storage or moved via SFTP;
+- event ingestion: producers publish directly into a broker or stream.
 
-Important ingestion terms include idempotency, backpressure, delivery semantics, offset, checkpoint, retry, dead-letter queue, watermark, and schema drift. These terms all describe how the system behaves when reality gets messy: jobs fail, networks drop, events duplicate, and data arrives late.
+Important ingestion terms -- idempotency, backpressure, delivery semantics, checkpoint, watermark, schema drift -- describe how the system behaves when jobs fail, networks drop, events duplicate, or data arrives late. Section 2 defines each in depth.
 
-Popular ingestion tools include Airbyte, Fivetran, Kafka, Redpanda, Kinesis, Pub/Sub, Debezium, custom Python services, and cloud-native data transfer services.
+Popular tools: Airbyte, Kafka, Debezium; Section 2 compares the full field.
 
 ## Storage: Where Data Lives
 
-Storage systems determine how data is retained, queried, secured, and governed. The major categories are operational databases, data warehouses, data lakes, and lakehouses.
-
-A data warehouse is optimized for analytical SQL over structured data. A data lake stores large amounts of raw and processed data, often in open file formats on object storage. A lakehouse combines data lake storage with warehouse-like reliability features such as transactions, schema management, and table metadata.
+Storage systems determine how data is retained, queried, and governed, across operational databases and the warehouse/lake/lakehouse categories distinguished above.
 
 Important storage terms include:
 
-- object storage: cloud storage for files or objects, such as S3, ADLS, or GCS;
+- object storage: cloud storage for files (S3, ADLS, GCS);
 - Parquet: a columnar file format widely used for analytics;
-- partitioning: organizing data by values such as date or region to improve access and management;
-- table format: a metadata layer such as Delta Lake, Iceberg, or Hudi that manages files as tables;
-- schema evolution: controlled change to the structure of stored data;
+- partitioning: organizing data by date or region to speed access;
+- table format: a metadata layer (Delta Lake, Iceberg, Hudi) that manages files as tables;
+- schema evolution: controlled change to a table's structure;
 - retention: rules for how long data is kept.
 
-Popular storage technologies include Snowflake, BigQuery, Redshift, Databricks, S3, ADLS, GCS, Delta Lake, Apache Iceberg, Apache Hudi, PostgreSQL, and Elasticsearch.
+Popular tools: Snowflake, S3, Apache Iceberg; Section 3 compares the full field.
 
 ## Processing and Transformation: Turning Raw Data into Usable Data
 
-Processing is the compute layer. Transformation is the logic that changes data from raw form into usable form. In practice, the two are closely linked: Spark, SQL engines, warehouses, and stream processors provide the compute; SQL, Python, dbt models, or notebooks define the transformation logic.
+Processing and transformation are distinguished under Common Confusions above; in practice they're linked -- Spark, SQL engines, warehouses, and stream processors provide the compute, while SQL, Python, dbt, or notebooks define the transformation logic.
 
-Transformation includes cleaning, joining, deduplicating, standardizing, enriching, aggregating, and modeling. The central modeling question is grain: what does one row represent? Many wrong metrics come from joining or aggregating data at the wrong grain.
+Transformation includes cleaning, joining, deduplicating, standardizing, and aggregating. The central modeling question is grain -- what does one row represent? -- since many wrong metrics come from the wrong grain.
 
 Important transformation terms include:
 
-- ETL: extract, transform, load;
-- ELT: extract, load, transform;
-- fact table: a table of business events or measurements;
-- dimension table: a table that describes entities such as customers, products, dates, or regions;
+- ETL / ELT: extract-transform-load versus extract-load-transform;
+- fact table: business events or measurements;
+- dimension table: entities such as customers or products;
 - data mart: a curated dataset for a business area;
-- semantic layer: a controlled layer of business metrics and definitions;
-- slowly changing dimension: a modeling technique for tracking entity attributes over time.
+- semantic layer: a controlled layer of business metrics;
+- slowly changing dimension: tracking entity attributes over time.
 
-Popular processing and transformation tools include SQL, dbt, Spark, Flink, Beam, Databricks, BigQuery, Snowflake, DuckDB, Python, and warehouse-native transformation frameworks.
+Popular tools: SQL, dbt, Spark; Section 4 compares the full field.
 
 ## Orchestration: Making Workflows Run
 
-Orchestration controls when and how data jobs run. It handles dependencies, schedules, retries, backfills, parameters, and alerts.
+Orchestration controls when and how data jobs run: dependencies, schedules, retries, backfills, parameters, and alerts.
 
-The key concept is the DAG, or directed acyclic graph. A DAG represents tasks and dependencies. For example, a revenue mart should not build until orders, payments, refunds, and product data have all arrived and passed checks.
+The key concept is the DAG (directed acyclic graph): tasks and dependencies, such as a revenue mart waiting on orders, payments, and refunds to arrive and pass checks.
 
 Important orchestration terms include:
 
@@ -186,82 +176,64 @@ Important orchestration terms include:
 - schedule: the time or event that starts a workflow;
 - sensor: a check that waits for a file, partition, or event;
 - backfill: rerunning past periods;
-- retry: rerunning a failed task according to defined rules;
-- SLA or SLO: an expected service level, such as freshness by a specific time.
+- SLA/SLO: an expected service level, such as freshness by a set time.
 
-Popular orchestration tools include Airflow, Dagster, Prefect, Argo Workflows, dbt Cloud, Azure Data Factory, and cloud-native schedulers.
+Popular tools: Airflow, Dagster, Prefect; Section 5 compares the full field.
 
 ## Quality, Reliability, and Observability
 
-Data quality asks whether data is fit for its intended use. Data reliability asks whether quality can be maintained consistently in production. Observability asks whether the team can see what the system is doing and diagnose failures quickly.
+Data quality asks whether data is fit for use; data reliability asks whether quality holds up in production; and observability asks whether the team can see what the system is doing and diagnose failures quickly.
 
-Common quality dimensions include completeness, validity, uniqueness, consistency, timeliness, accuracy, and integrity. For example, a prices dataset may need checks for missing securities, stale prices, invalid currencies, duplicate vendor records, and reconciliation against source totals.
+Common quality dimensions include completeness, validity, uniqueness, consistency, timeliness, accuracy, and integrity.
 
 Important terms include:
 
 - freshness: how up to date the data is;
 - completeness: whether expected records or partitions are present;
-- validity: whether values follow rules;
 - reconciliation: comparing outputs against an authoritative source;
 - anomaly detection: detecting unusual changes in volume, values, or distributions;
 - data incident: a production issue that affects trust or downstream use;
 - runbook: a documented response procedure.
 
-Popular tools include dbt tests, Great Expectations, Soda, Deequ, Monte Carlo, Bigeye, Datadog, CloudWatch, Prometheus, Grafana, and custom SQL or Python checks.
+Popular tools: dbt tests, Great Expectations, custom checks; Section 6 compares the full field.
 
 ## Metadata, Lineage, Governance, and Security
 
-Metadata is data about data. It describes schemas, owners, definitions, freshness, sensitivity, quality, usage, and lineage. Without metadata, data platforms become hard to trust even if the pipelines technically run.
-
-Lineage shows where data came from and how it changed. Governance defines ownership, access, retention, quality expectations, and approved use. Security protects data from unauthorized access or misuse.
+Metadata is data about data -- schemas, owners, freshness, sensitivity, usage, lineage -- and without it, platforms become hard to trust even when pipelines run. Lineage shows where data came from and how it changed; governance defines ownership, access, and approved use; security protects data from unauthorized access or misuse.
 
 Important terms include:
 
 - data catalog: a searchable inventory of datasets;
 - owner: the person or team accountable for a data asset;
-- lineage: the path from source to output;
 - data contract: an agreement between producers and consumers about schema, meaning, freshness, and quality;
 - classification: labeling data by sensitivity or policy;
 - masking: hiding sensitive values while preserving usability;
 - least privilege: giving users only the access they need.
 
-Popular tools include DataHub, OpenMetadata, Amundsen, Collibra, Alation, Unity Catalog, Apache Atlas, AWS Lake Formation, Apache Ranger, cloud IAM, KMS, and Vault.
+Popular tools: DataHub, Unity Catalog, Apache Atlas; Section 7 compares the full field.
 
 ## Serving: Making Data Useful
 
-Serving is the stage where data reaches consumers. The right serving pattern depends on the consumer.
+Serving is the stage where data reaches consumers; the right pattern depends on who consumes it.
 
-Business intelligence needs curated tables, dashboards, extracts, semantic models, and fast analytical queries. Machine learning needs training datasets, features, labels, predictions, and model monitoring data. Applications may need low-latency APIs, search indexes, caches, or operational databases. Business tools may need reverse ETL, where modeled data is pushed back into systems such as CRMs or marketing platforms.
+Business intelligence needs curated tables and fast queries; machine learning needs training data and features; applications need low-latency APIs or caches; and reverse ETL pushes modeled data back into tools such as CRMs.
 
 Important serving terms include:
 
 - BI mart: a curated dataset for reporting;
 - feature store: a system for managing reusable machine learning features;
-- OLAP: analytical processing optimized for aggregations and slicing;
 - reverse ETL: sending warehouse data back to operational SaaS tools;
-- API serving: exposing data through a programmatic interface;
 - cache: a fast storage layer for repeated low-latency reads.
 
-Popular tools include Tableau, Power BI, Looker, Superset, Metabase, Feast, Tecton, Redis, Elasticsearch, Postgres, DuckDB, ClickHouse, Druid, Pinot, Census, and Hightouch.
+Popular tools: Tableau, Feast, Redis, spanning BI, features, and low-latency serving; Section 7 compares the full field.
 
 ## What Data Engineers Build
 
-Data engineers build systems such as:
-
-- ingestion pipelines that move data from applications, APIs, files, logs, devices, and databases;
-- storage layers such as warehouses, lakes, lakehouses, operational stores, and search indexes;
-- transformation jobs that clean, join, aggregate, and model data;
-- orchestration workflows that run jobs in the right order;
-- data quality checks that detect missing, late, duplicated, or invalid records;
-- metadata and lineage systems that explain where data came from and how it changed;
-- access controls and governance practices that protect sensitive data;
-- serving layers for analytics, machine learning, applications, and operational workflows.
-
-In small organizations, one person may do all of this. In larger organizations, data engineering may be split across platform engineers, analytics engineers, machine learning engineers, data reliability engineers, governance specialists, and domain-focused pipeline owners.
+In practice, data engineers build and operate every system named above. In small organizations, one person may own all of it; in larger ones, the work splits across platform, analytics, and machine learning engineers, plus reliability and governance specialists.
 
 ## Data Engineering Compared with Related Roles
 
-The role-comparison table distinguishes the questions and outputs owned by adjacent disciplines.
+The table below distinguishes the questions and outputs owned by adjacent disciplines.
 
 ::: {#tbl:related-roles}
 Table: Data engineering compared with related roles.
@@ -276,38 +248,15 @@ Table: Data engineering compared with related roles.
 | Database administrator | How do we keep databases performant and available? | Database tuning, backups, access management |
 :::
 
-These boundaries are not rigid. The same team may own several of these responsibilities. What matters is the flow of work: raw data must become trusted data before it can support high-quality analysis or automation.
+These boundaries are not rigid -- the same team may own several. What matters is the flow of work: raw data must become trusted data before it can support high-quality analysis or automation.
 
 ## How to Read the Rest of This Guide
 
-This introduction gives the field map. The remaining sections slow down and examine each stage more carefully:
-
-- Section 1 develops the lifecycle map, source concepts, and mental models.
-- Section 2 covers ingestion.
-- Section 3 covers storage.
-- Section 4 covers transformation and processing patterns.
-- Sections 5 to 7 cover orchestration, quality, metadata, governance, and serving.
-- Section 8 collects practitioner topics such as security, observability, architecture patterns, tooling, and applied discussion.
-- Sections 9 to 11 provide the learning path, glossary, and references.
-
-The later sections are where implementation detail belongs. By the end of this first section, however, a reader should already recognize the vocabulary of the discipline and understand how the major pieces fit together.
-
-## The Data Engineering Mental Model
-
-Most data engineering systems can be understood through a recurring flow:
-
-1. Data is created in source systems.
-2. Data is ingested into a data platform.
-3. Data is stored in raw and processed forms.
-4. Data is transformed into consistent models.
-5. Data is validated, documented, secured, and monitored.
-6. Data is served to downstream users and systems.
-
-Surrounding that flow are operational concerns: orchestration, observability, governance, cost management, reliability, and security.
+Sections 2 through 7 slow down and examine ingestion, storage, transformation, orchestration, quality, and governance/serving in turn; Section 8 collects cross-cutting practitioner topics such as security, observability, and cost; Sections 9-11 provide the learning path, glossary, and references.
 
 ## The Pipeline View
 
-A pipeline is a repeatable process that moves data through stages. A basic pipeline might:
+Most data engineering systems share a recurring flow -- create, ingest, store, transform, validate, serve -- surrounded by orchestration, observability, governance, cost, and security. A pipeline is the repeatable process that moves data through that flow; a basic one might:
 
 1. extract yesterday's orders from a production database;
 2. load them into a raw storage area;
@@ -320,13 +269,13 @@ The pipeline is successful only if it produces the right result at the right tim
 
 ## The Layered View
 
-Many teams organize data by layers. The names vary, but the ownership boundary
+Many teams organize data by layers; names vary, but the ownership boundary
 is useful: raw or bronze data preserves source evidence with minimal changes;
 cleaned or silver data standardizes formats and removes obvious defects;
 curated or gold data applies business meaning for analytics and applications;
 and a serving layer optimizes a contract for a dashboard, feature store, or API.
 
-This layered approach helps separate concerns. Raw data supports auditability and reprocessing. Cleaned data supports reuse. Curated data supports business meaning.
+This separates concerns: raw data supports auditability and reprocessing, cleaned data supports reuse, and curated data supports business meaning.
 
 ## The Contract View
 
@@ -337,36 +286,25 @@ A data pipeline is also a set of contracts:
 - output tables promise schemas, freshness, and semantic definitions;
 - consumers promise expected usage patterns.
 
-Many data failures happen when these contracts are implicit. A source team renames a column, changes a timestamp timezone, or alters the meaning of a status code. Good data engineering makes these contracts explicit and testable.
-
-## Data Sources and Data Types
-
-Data engineering begins with source systems. A source system is any system that creates, stores, or emits data.
+Many data failures happen when these contracts are implicit -- a source team renames a column, changes a timestamp timezone, or alters a status code's meaning. Good data engineering makes contracts explicit and testable.
 
 ## Common Data Sources
 
-Different sources create different constraints. Application databases bring
-schema changes, load impact, and consistency questions; SaaS APIs add rate
-limits, authentication, and pagination; event streams require ordering,
-duplicate, and late-arrival handling. Logs and file feeds add volume, parsing,
-retention, naming, and arrival-pattern concerns. Devices add frequency, missing
-readings, and clock drift, while third-party datasets require licensing,
-update, and provenance checks.
-
-Each source has its own failure modes. APIs throttle requests. Databases change schemas. Files arrive late. Events duplicate. A data engineer designs ingestion processes with those realities in mind.
+Different source types bring different constraints: application databases
+bring schema changes; SaaS APIs add rate limits; event streams require
+ordering and late-arrival handling; and logs, files, devices, and
+third-party datasets each add their own retention, drift, or provenance
+concerns. Ingestion is designed around those source-specific failure modes.
 
 ## Structured, Semi-Structured, and Unstructured Data
 
 Structured data has a predictable schema, such as relational tables or stable
-CSV. Semi-structured data has organization but a flexible shape, such as JSON,
-XML, Avro, or nested events; it usually needs schema inference, nested parsing,
-or an explicitly governed table. Unstructured data includes PDFs, images,
-emails, audio, and video; it needs extraction, indexing, embeddings, or rich
-metadata before it can be joined with tabular data. A modern platform may need
-all three, such as structured account data joined to ticket events and call
+CSV. Semi-structured data has organization but a flexible shape (JSON, XML,
+Avro, nested events) and usually needs schema inference. Unstructured data
+(PDFs, images, audio, video) needs extraction, indexing, or embeddings before
+joining with tabular data. Modern platforms increasingly need all three, such
+as a support system joining account data, ticket events, and call
 transcripts.
-
-Modern data platforms increasingly need to combine all three. For example, a customer support analysis system might join structured account data, semi-structured ticket events, and unstructured call transcripts.
 
 ## Data Shape and Granularity
 
@@ -396,3 +334,12 @@ Finance and quantitative research add requirements such as timestamp
 provenance, correction history, market-calendar semantics, and reproducibility.
 The lifecycle stays the same, but the contract and operating controls become
 more demanding.
+
+You now have the map: the lifecycle stages, the vocabulary, and the mental
+models for reading any data system. If you ran the quick start at the front
+of this guide, you already have a `PASSED` line and 48 deduplicated trades in
+`companion/output/`; if not, this is a good place to go back and run it. The
+next eight sections reconstruct that same pipeline stage by stage rather than
+introduce a new one: Section 2 starts from the same 49 raw BTCUSDT events and
+explains why ingestion must catch the redelivered trade and the late,
+out-of-order arrivals before anything downstream can be trusted.

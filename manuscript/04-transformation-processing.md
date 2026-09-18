@@ -347,13 +347,20 @@ The destination must merge or replace the same lookback partitions
 idempotently. A three-day interval is an example policy, not a universal
 default.
 
-**Illustrative.** A windowed aggregate keeps a short event-time lookback open
-for corrections, then marks an hour final only after the allowed-lateness
-boundary. Streaming engines express this with different syntax; the policy is
-the portable idea.
+**Runnable with adaptation.** The statement below deduplicates the candidate
+window, aggregates it into hourly bars, and marks an hour final only after
+the allowed-lateness boundary clears; it demonstrates the late-data lookback
+and finalization guarantee this section teaches. Once the `:run_hour_utc` and
+`:watermark_utc` bind parameters are supplied with concrete UTC timestamps,
+the statement runs as shown against `stg_trades`. The same finalization
+policy generalizes to streaming engines, which express it with different
+syntax (state, watermarks, triggers) rather than a single batch SQL
+statement.
 
 ::: {#lst:sec04-hourly-ohlcv}
-Listing: Hourly OHLCV with late-data lookback.
+Listing: Hourly OHLCV with late-data lookback (continues across the page
+break below; the second box opens with a leading comma that continues the
+first box's `WITH` clause rather than starting a new statement).
 
 ```sql
 WITH candidate_hours AS (
@@ -362,17 +369,19 @@ WITH candidate_hours AS (
     WHERE event_timestamp >= :run_hour_utc - INTERVAL '3 hours'
       AND event_timestamp < :run_hour_utc + INTERVAL '1 hour'
 )
-SELECT * FROM candidate_hours;
 ```
 
 The `candidate_hours` window above is then aggregated into hourly bars and
-marked final only once the watermark clears the allowed-lateness boundary;
-the continuation is shown as a second box in the same listing (one script,
-not two independent queries) so the page break falls between the two `WITH`
-blocks instead of inside a `WHERE` clause.
+marked final only once the watermark clears the allowed-lateness boundary.
+This is one continuous `WITH ... , ... SELECT` statement, not two independent
+queries: the page break falls between two members of the same `WITH` clause.
+The box below continues that same clause -- notice it opens with a leading
+comma (`, bars AS (`), not a new `WITH` keyword -- so `candidate_hours` stays
+in scope for `bars` because both are defined inside one statement that only
+terminates at the final `SELECT ... FROM bars;`.
 
 ```sql
-WITH bars AS (
+, bars AS (
     SELECT
         exchange_name,
         asset_symbol,
@@ -445,6 +454,23 @@ directly, full-refreshing a growing history by default, and rewriting every
 partition when one late event arrives can all produce plausible but expensive
 or inflated results.
 
+::: practice
+**Practice: diagnose a shortened lookback window.**
+
+The capstone's incremental staging job rebuilds `stg_trades` from
+`curated_trades` using a 3-day event-time lookback (the `WHERE
+event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '3 days'` guard in
+`lst:sec04-deduplicate-trades`). A teammate shortens it to 30 minutes to cut
+compute cost. Two days later, a correction for a trade that first landed in
+`curated_trades` last week is redelivered with a later `ingested_at`.
+
+1. Will this correction ever reach `fct_trades`? Why or why not?
+2. Which values in `fct_hourly_ohlcv` end up wrong as a result, and would
+   they look obviously wrong or "plausible but wrong"?
+3. Name one quality check from this project's companion path (Section 6)
+   that would catch this, and one failure mode it would *not* catch.
+:::
+
 ## Transformation and Processing Checklist
 
 Before implementing a transformation pipeline, define:
@@ -464,3 +490,11 @@ Before implementing a transformation pipeline, define:
 - the documentation and ownership.
 
 Transformation is successful when the output is not only technically valid, but semantically correct, reproducible, tested, and understandable.
+
+## Further Learning
+
+- **[About incremental models](https://docs.getdbt.com/docs/build/incremental-models)**, dbt Labs official documentation (accessed 2026-09-18). Goes deeper on the `is_incremental()` pattern and lookback-window strategies used in `lst:sec04-deduplicate-trades`.
+- **[The `ref()` function](https://docs.getdbt.com/reference/dbt-jinja-functions/ref)**, dbt Labs official documentation (accessed 2026-09-18). Explains how `ref()` builds the model dependency DAG referenced throughout this section's dbt discussion.
+- **[Aggregate Functions](https://duckdb.org/docs/sql/functions/aggregates)**, DuckDB official documentation (accessed 2026-09-18). Documents `arg_min`/`arg_max` and the other ordered aggregates used to compute open and close prices in the hourly OHLCV listing.
+- Ralph Kimball and Margy Ross, *The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling*, 3rd edition (Wiley, 2013). The standard reference for star schemas, surrogate keys, and the slowly changing dimension types introduced in this section.
+- **[Window Functions](https://www.postgresql.org/docs/current/tutorial-window.html)**, PostgreSQL official documentation (accessed 2026-09-18). A durable, standards-based introduction to the `ROW_NUMBER() OVER (PARTITION BY ...)` pattern this section's deduplication listing relies on.

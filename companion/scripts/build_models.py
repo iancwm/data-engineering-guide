@@ -19,7 +19,14 @@ Everything else -- the exact column casts, the `ROW_NUMBER()` ordering, the
 `arg_min`/`arg_max` OHLC aggregation, the allowed-lateness `is_final` flag --
 is copied verbatim from the manuscript listings, so this script is
 demonstrably testing the guide's own SQL, not a different query that merely
-does something similar.
+does something similar. `build_fct_hourly_ohlcv` below also mirrors
+`lst:sec04-hourly-ohlcv`'s two-box CTE *chain shape*: `candidate_hours`
+followed by a `, bars AS (...)` continuing the same `WITH` clause, exactly as
+the manuscript's two boxes now do across their page break. See that
+function's docstring for the parameter-to-value translation, and
+`test_manuscript_sql_alignment.py` in this directory for a fixture assertion
+that fails loudly if this shape and the manuscript listing's shape drift
+apart.
 
 Then runs the checks translated from `lst:sec06-dbt-tests` (unique trade
 key, non-null timestamps, positive price/quantity, `high_price >=
@@ -98,11 +105,43 @@ def build_fct_trades(con: duckdb.DuckDBPyConnection) -> None:
 
 
 def build_fct_hourly_ohlcv(con: duckdb.DuckDBPyConnection) -> None:
-    """Hourly OHLCV with late-data lookback (translates lst:sec04-hourly-ohlcv)."""
+    """Hourly OHLCV with late-data lookback (translates lst:sec04-hourly-ohlcv).
+
+    Mirrors the corrected manuscript listing's two-box CTE chain shape
+    exactly -- `candidate_hours` then a `, bars AS (...)` that continues the
+    *same* `WITH` clause (leading comma, not a new `WITH`) -- so this
+    translation cannot silently diverge from the manuscript SQL's shape
+    without this comment (and `test_manuscript_sql_alignment.py`, which
+    checks both files) going stale.
+
+    Translated constructs (everything else -- the `arg_min`/`arg_max` OHLC
+    picks, `GROUP BY 1, 2, 3`, and the `is_final` boundary -- is copied
+    verbatim from the manuscript listing):
+
+    - `FROM stg_trades` becomes `FROM fct_trades`: this companion path's
+      already-materialized deduplicated trade table is the manuscript's
+      `stg_trades` staging grain (see the capstone handoff
+      `curated_trades -> stg_trades -> fct_trades -> fct_hourly_ohlcv`).
+    - `:run_hour_utc - INTERVAL '3 hours'` / `:run_hour_utc + INTERVAL
+      '1 hour'` (the per-run hour-plus-lookback window bind parameter) is
+      dropped from the WHERE bounds here: `run_all.py` builds the whole
+      bounded fixture in one pass rather than one incremental hourly run, so
+      `candidate_hours` below is that same filter's degenerate case with no
+      hour boundary applied -- every row currently in `fct_trades`. The
+      manuscript listing keeps the parameterized, single-hour form; this is
+      the "process every hour at once" case of the identical query shape.
+    - `:watermark_utc` becomes `(SELECT MAX(event_timestamp) FROM
+      fct_trades)`, i.e. "the latest event this run has seen" -- a concrete,
+      data-derived stand-in for "now" so the fixture needs no wall-clock
+      dependency.
+    """
     con.execute(
         f"""
         CREATE OR REPLACE TABLE fct_hourly_ohlcv AS
-        WITH bars AS (
+        WITH candidate_hours AS (
+            SELECT * FROM fct_trades
+        )
+        , bars AS (
             SELECT
                 exchange_name,
                 asset_symbol,
@@ -113,7 +152,7 @@ def build_fct_hourly_ohlcv(con: duckdb.DuckDBPyConnection) -> None:
                 arg_max(price, (event_timestamp, source_trade_id)) AS close_price,
                 sum(quantity) AS total_quantity,
                 count(*) AS trade_count
-            FROM fct_trades
+            FROM candidate_hours
             GROUP BY 1, 2, 3
         )
         SELECT

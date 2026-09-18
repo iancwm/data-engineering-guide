@@ -1,12 +1,12 @@
 ---
 title: "A Practical Guide to Data Engineering"
 subtitle: "Core Concepts, Systems, Pipelines, and Production Practices"
-author: "ReportKit contributors"
+author: "Ian Chong"
 date: "2026-09-06"
 version: "Version 1.0"
 license: "Original prose and diagrams are licensed CC BY 4.0; code examples and third-party assets retain their separate licences."
 disclaimer: "Educational material only. Verify examples against your systems and current documentation; this guide is not operational, financial, legal, or security advice."
-project-url: "https://github.com/iancwm/report-kit"
+project-url: "https://github.com/iancwm/data-engineering-guide"
 documentclass: article
 papersize: a4
 fontsize: 11pt

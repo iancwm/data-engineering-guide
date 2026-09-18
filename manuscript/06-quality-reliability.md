@@ -32,7 +32,7 @@ Quality is contextual. A dataset can be good enough for exploratory analysis but
 
 For market, pricing, or fundamental datasets, these dimensions become concrete. A price table may need tests for missing securities, stale values, negative prices, duplicated vendor records, invalid currency codes, suspicious day-over-day moves, and reconciliation against source delivery counts. The exact tests should follow the use case, not a generic checklist.
 
-The quality-loop figure shows the feedback relationship among expectations, tests, monitoring, and incident response rather than treating quality as a one-time cleanup step.
+The quality-loop figure shows this as a branch, not a straight pipeline. A contract sets the expectation and a test checks it; a passing test moves straight to publication. A failing test follows a separate, visually distinct exception path to an alert, and the alert forces an explicit decision to block, warn, or quarantine the affected data rather than a silent pass. That decision is what feeds back into the contract, so the next interval is checked against the same or a revised expectation instead of starting from nothing.
 
 [[REPORTKIT-VISUAL:fig:sec06-quality-loop]]
 
@@ -269,6 +269,25 @@ The completed capstone is therefore more than a set of tables. It is a reproduci
 counts at incompatible grains, alerting without an owner, and silently
 discarding quarantined records all turn quality checks into theatre.
 
+## Checkpoint: Does the Interval Reconcile?
+
+::: practice
+**Practice.** For one finalized UTC hour, the pipeline reports 100,240
+received raw attempts, 15 records quarantined for a malformed price field,
+225 duplicate accepted attempts from an at-least-once retry, and 100,000
+distinct trade keys in `stg_trades`. `fct_hourly_ohlcv`'s `trade_count` for
+that same hour is 99,940.
+
+1. Predict whether the raw attempts, quarantined records, and duplicate
+   attempts reconcile against the 100,000 distinct trade keys.
+2. Decide whether the `fct_hourly_ohlcv` trade count agrees with `fct_trades`
+   for the same interval, and name the reconciliation check from step 7 above
+   that should have caught a mismatch before publication.
+3. Diagnose the 60-row shortfall: is it more consistent with a quarantine
+   defect, a grain mismatch, or trades that arrived after the hour was
+   finalized? State which additional check you would add.
+:::
+
 ## Quality and Reliability Checklist
 
 Before publishing a production dataset, define:
@@ -285,3 +304,10 @@ Before publishing a production dataset, define:
 - ownership and escalation paths;
 - downstream impact when data is delayed or wrong;
 - incident review and prevention process.
+
+## Further Learning {#sec06-further-learning}
+
+- dbt Labs documentation, ["About dbt tests"](https://docs.getdbt.com/docs/build/data-tests), *dbt Developer Hub*. Accessed 18 September 2026. Documents the generic and singular test types behind the `stg_trades` and `fct_hourly_ohlcv` YAML tests in the capstone listing above.
+- dbt Labs documentation, ["About continuous integration jobs"](https://docs.getdbt.com/docs/deploy/continuous-integration), *dbt Developer Hub*. Accessed 18 September 2026. Describes the CI-triggered test run behind the Shift-Left Quality section's claim about running dbt tests before merging model changes.
+- Great Expectations documentation, ["Core concepts"](https://docs.greatexpectations.io/docs/core/introduction/), *Great Expectations documentation*. Accessed 18 September 2026. Explains the expectation-suite model referenced in the Quality Tooling Landscape table's validation-framework row.
+- ISO/IEC 25012:2008, ["Software engineering — Software product Quality Requirements and Evaluation (SQuaRE) — Data quality model"](https://www.iso.org/standard/35736.html), *International Organization for Standardization*. Accessed 18 September 2026. The formal standard behind the completeness, accuracy, consistency, and timeliness dimensions defined in the Dimensions of Data Quality table.

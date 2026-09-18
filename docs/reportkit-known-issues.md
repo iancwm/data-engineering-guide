@@ -43,3 +43,200 @@ but the error message itself doesn't point there. Suggested upstream fix:
 have `build-report.json`'s remediation text for `RK_RENDER_FAILED` mention
 `setup.sh` by name when the underlying stderr contains
 `ModuleNotFoundError`.
+
+## 3. Release PDF is untagged and does not expose an accessible structure tree
+
+The PDF produced by `publication_build.py` (both draft and `--profile
+release` builds) is not a Tagged PDF. Evidence:
+
+```
+$ pdfinfo build/combined/data-engineering-guide.pdf
+Title:           Data Engineering Guide
+Subject:         Core concepts, systems, pipelines, and production practices for data engineering.
+Keywords:        data engineering, data systems, pipelines, storage, orchestration, data quality
+Author:          Ian Chong
+Creator:         LaTeX with hyperref
+Producer:        pdfTeX-1.40.25
+Custom Metadata: yes
+Metadata Stream: no
+Tagged:          no
+UserProperties:  no
+Suspects:        no
+Pages:           81
+Page size:       595.276 x 841.89 pts (A4)
+PDF version:     1.5
+```
+
+**Status of this evidence:** captured from a real `--profile release`
+combined build of this publication (two consecutive clean builds, zero
+blocking diagnostics) run against the pinned ReportKit commit
+(`e1d55be784416fdfb89635dc407bdd80b4f85255`). `Tagged: no` is confirmed, not
+inferred -- the author/title/subject/keywords metadata (also part of this
+same accessibility/credibility pass) round-trips correctly, but there is no
+structure tree at all beneath it.
+
+**Desired outcome.** The release PDF should be a PDF/UA or Tagged PDF with a
+complete accessible structure tree, specifically:
+
+- a heading hierarchy (`/H1`, `/H2`, ...) matching the manuscript's H1/H2
+  structure (`# Section N - ...`, `## ...`);
+- a logical reading order (`/StructTreeRoot` order) matching the visual
+  layout, including multi-column or floated content;
+- `/Figure` structure elements for each diagram, wired to the figure's
+  accessible text (see below);
+- `/Table` structure elements for the manuscript's pipe tables, with header
+  cells marked as `/TH` so a screen reader can announce row/column context;
+- `/Code` (or an equivalent marked-content role) for fenced code listings, so
+  they are not read as undifferentiated body text;
+- tagged links (`/Link` structure elements with real `/Contents` or
+  `/Alt` text), not bare, unlabeled hyperlink annotations.
+
+**Figure descriptions currently do not reach the PDF.** Each
+`[[REPORTKIT-VISUAL:fig:<slug>]]` sentinel's corresponding fragment already
+carries a `description=` field intended as the figure's alt text (see the
+fragments under `fragments/` in this repository). Today that text has nowhere
+to land: because the PDF has no structure tree at all, there is no `/Figure`
+element for a `description=` value to attach to as `/Alt` text, so the
+content is present in the source but inaccessible in the shipped PDF. Fixing
+the tagging gap must therefore also thread `description=` through to each
+image's structure-element alt text, not just add a structure tree in the
+abstract.
+
+**This must be fixed upstream, not patched here.** Per this engine's own
+repository-boundary convention
+(`/home/user/iancwm/report-kit/references/repository-boundary.md`: "If you
+are changing a `.cls`/`.sty` file ... you are working **on the engine**"),
+PDF tagging is a document-class/style concern — it has to be implemented in
+ReportKit's `.cls`/`.sty` files (e.g. via `\DocumentMetadata{tagged=true,
+...}` plus explicit `\Alt{...}` text at each figure/table insertion point in
+the class, driven by the fragment's `description=` field), not worked around
+with publication-local TeX patches in this manuscript or its fragments.
+Publication-local patches are not an acceptable permanent solution: they
+would have to be re-applied by hand on every ReportKit upgrade and would
+leave every other ReportKit-built publication still untagged.
+
+**Impact.** This does not block the rest of this revision's content or
+visual work — text, diagrams, tables, and the build itself are otherwise
+unaffected. It does block any claim that the release PDF is "fully
+accessible": until the structure tree exists, screen-reader users cannot
+navigate the PDF by heading, get meaningful figure/table announcements, or
+rely on the reading order matching the visual layout.
+
+## 4. Pinned Libertinus font assets require manual TDS extraction and
+   `updmap-sys` registration that no script performs
+
+`reportkit.lock`'s `toolchain.expected.fonts` pins
+`font_data/reportkit-libertinus-fonts.tar.gz` (a proper TDS-structured
+archive: `tex/latex/libertinus/`, `tex/latex/libertinust1math/`,
+`fonts/{tfm,type1,afm,vf,enc,map}/...`), but nothing under
+`publication_pipeline/scripts/` (including `setup.sh`, which only creates
+the Python render venv) extracts this archive into a TeX tree or registers
+its two map files (`fonts/map/dvips/libertinus-type1/libertinus.map` and
+`fonts/map/dvips/libertinust1math/libertinust1math.map`) with `updmap-sys`.
+
+Symptom without that step: `\documentclass{reportkit}` (which
+`\RequirePackage{libertinus}` in `reportkit-theme-default.sty`) fails
+immediately with `! LaTeX Error: File 'libertinus.sty' not found.` once the
+font isn't on `TEXMFLOCAL`/`TEXMFHOME` at all. Once the archive is manually
+extracted (e.g. into `/usr/local/share/texmf` + `texhash`), `libertinus.sty`
+loads, but compilation still fails with a *different*, much harder to
+diagnose fatal at the very first page shipout (`\RKContents`, before any
+publication content is processed):
+
+```
+pdfTeX error (font expansion): auto expansion is only possible with scalable fonts.
+<argument> ...shipout:D \box_use:N \l_shipout_box
+==> Fatal error occurred, no output PDF file produced!
+```
+
+Root cause: `reportkit-core.sty` loads `microtype` with its default
+font-expansion behavior, which requires the active fonts' Type 1 outlines to
+be registered in `pdftex.map`; the Libertinus TDS archive ships its map
+files, but they are inert until enabled with `updmap-sys --enable
+Map=<name>.map`. Two calls resolve it:
+
+```
+sudo updmap-sys --enable Map=libertinus.map
+sudo updmap-sys --enable Map=libertinust1math.map
+```
+
+Neither the LaTeX error text nor the build-report diagnostic (`RK_MISSING_FONT`
+/ `RK_LATEX_ERROR`) names font-map registration as the fix, so an operator
+who only extracts the TDS archive (the seemingly-complete fix for the first
+error) hits a second, unrelated-looking fatal with no pointer back to fonts
+at all. Suggested upstream fix: have `setup.sh` (or a new
+`setup-fonts.sh`) extract `font_data/reportkit-libertinus-fonts.tar.gz` into
+the venv-local or a project-local `TEXMFHOME`/`TEXMFLOCAL` tree and run the
+two `updmap-sys --enable` calls above as part of environment bootstrap,
+rather than leaving font installation as an undocumented manual step; at
+minimum, surface a specific `RK_FONT_MAP_NOT_REGISTERED` diagnostic instead
+of the generic pdfTeX expansion fatal.
+
+## 5. `publication_build.py`'s page-render step ignores `--output-root`'s
+   own venv when a fresh `<output-root>` is reused
+
+Deleting and recreating only part of an output tree (for example `rm -rf
+<output-root>/combined` to force a clean recompile while intentionally
+keeping `<output-root>/.venv` from an earlier `setup.sh` run) works
+correctly. But `rm -rf <output-root>` in full, followed by re-running
+`publication_build.py` without re-running `setup.sh` first, produces the
+same `RK_RENDER_FAILED` / `ModuleNotFoundError: No module named 'pymupdf'`
+failure documented in Issue 2 above, because the LaTeX compile and validate
+steps succeed and only the final page-render step needs the venv -- so the
+build gets most of the way through (gate: passed on the PDF compile itself)
+before failing at rendering, which can read as a flaky or partial failure
+rather than the same missing-venv cause as Issue 2. Suggested upstream fix:
+have `publication_build.py` check for `<output-root>/.venv` up front (before
+starting the compile passes) and fail fast with the `setup.sh` remediation
+from Issue 2, rather than discovering the missing venv only at the last
+step.
+
+## 6. Publication-details page prints "Classification: ." even when no
+   classification is set
+
+The generated `publication-template.tex` wraps the classification line in
+`\ifx\RKPubClassification\empty\else ... \fi`, but `metadata.tex` defines it
+with `\newcommand{\RKPubClassification}{}` (an empty-replacement-text macro),
+not `\let\RKPubClassification\empty`. `\ifx` compares meanings, not expanded
+content, so a `\newcommand`-defined empty macro is never `\ifx`-equal to the
+`\empty` primitive: the guard always evaluates false, and every publication
+that leaves `classification` unset (this one included) prints a bare
+"Classification: ." on its publication-details page. Confirmed visually in
+this revision's page 2. Suggested upstream fix: guard on
+`\ifx\RKPubClassification\@empty` after `\edef`-expanding it, or simpler,
+have `metadata.tex`'s generator skip emitting the `\newcommand` (and the
+surrounding conditional block) entirely when the source `publication.yaml`
+has no `classification` key, rather than relying on an empty-string
+comparison.
+
+## 7. Unicode arrow ("→") inside inline code loses its glyph on PDF text
+   extraction (font ToUnicode gap)
+
+Several capstone-handoff sentences use a literal "→" (U+2192) inside inline
+code spans, e.g. `` `raw_trades + manifest → curated_trades + catalog` ``.
+The PDF renders these visually correctly, but extracting the PDF's text
+(`pdftotext`) turns each arrow into a stray `\x19` control character instead
+of `→` or even a plain hyphen fallback:
+
+```
+$ pdftotext -layout data-engineering-guide.pdf - | cat -A | grep -o '.\{20\}\x19.\{20\}' | head -1
+The capstone handoff is raw_trades + manifest ^Y curated_trades + catalog...
+```
+
+Root cause: the monospace/code font's embedded subset does not carry a
+ToUnicode CMap entry mapping that glyph back to U+2192, so any consumer that
+reads the PDF's text layer (search, copy-paste, screen readers, this guide's
+own QA text-extraction check) sees a control character instead of the arrow.
+This does not affect on-screen/printed rendering, only text-layer fidelity,
+and compounds the accessibility gap in Issue 3. Confirmed pre-existing (not
+introduced by this revision) and present in every inline-code arrow across
+the manuscript, not isolated to any one section. Suggested upstream fix: has
+two independent parts, either of which resolves it -- (a) ensure the code
+font's font-encoding setup preserves/declares a ToUnicode mapping for U+2192
+(a `\pdfglyphtounicode` entry, or selecting a code font/encoding that already
+carries one), or (b) note in this guide's own authoring convention that
+inline code should prefer the ASCII `->` (which pandoc/LaTeX do not silently
+transform) over a literal "→" character when the sentence is not itself a
+runnable command. (b) is a publication-content decision, not an engine fix,
+and is out of scope for this pass; recorded here because the root cause is
+font/encoding-level.

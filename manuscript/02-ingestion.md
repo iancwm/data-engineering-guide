@@ -356,6 +356,24 @@ quarantine path all make later reconciliation impossible.
 
 Be cautious with the phrase "order book" for this project. Trade ticks are simpler than full order book reconstruction. A true order book project requires ingesting snapshots and incremental depth updates, then applying sequence numbers correctly. That is a valuable advanced extension, but it should not be confused with basic trade ingestion.
 
+## Checkpoint: Trace a Lost Acknowledgement
+
+::: practice
+**Practice.** The producer publishes a trade event to the `raw_crypto_trades`
+topic. The broker durably appends it and sends an acknowledgement, but the
+acknowledgement is lost before the producer receives it. The producer's
+bounded-backoff reconnect logic treats this as a failed send and republishes
+the same event.
+
+Work through the consequence using the delivery-semantics and idempotency
+material above, then check your reasoning before moving on:
+
+1. Does this create a gap or a duplicate in the raw landing?
+2. Which stage is responsible for making that outcome harmless: the broker,
+   the raw landing write, or the load into `curated_trades`?
+3. Which field in the event envelope makes that stage's job possible?
+:::
+
 ## Ingestion Design Checklist
 
 Before implementing an ingestion pipeline, define:
@@ -377,3 +395,10 @@ Before implementing an ingestion pipeline, define:
 - cost and rate-limit constraints.
 
 An ingestion pipeline is production-ready when it can fail, retry, replay, and explain what happened. The raw movement of bytes is only the beginning.
+
+## Further Learning {#sec02-further-learning}
+
+- Apache Kafka documentation, ["Message Delivery Semantics"](https://kafka.apache.org/documentation/#semantics), *Apache Kafka documentation*. Accessed 18 September 2026. Expands on the at-most-once, at-least-once, and exactly-once distinctions used in the delivery-semantics table above.
+- Apache Kafka documentation, ["Producer Configs"](https://kafka.apache.org/documentation/#producerconfigs), *Apache Kafka documentation*. Accessed 18 September 2026. Documents the idempotent-producer setting referenced in the Idempotency section's discussion of safe retries.
+- Debezium documentation, ["Debezium Architecture"](https://debezium.io/documentation/reference/stable/architecture.html), *Debezium documentation*. Accessed 18 September 2026. Explains how a CDC connector reads a database's transaction log, the mechanism behind the Change Data Capture section above.
+- Binance Spot API documentation, ["Trade Streams"](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams), *Binance API documentation*. Accessed 18 September 2026. The authoritative field reference for the `btcusdt@trade` payload the capstone producer normalizes; check it before adapting the producer skeleton, since exchange payloads can change.

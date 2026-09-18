@@ -1,13 +1,24 @@
 \begin{diagram}[
-  type=roadmap,
+  type=flow,
+  width=\textwidth,
   label={fig:sec09-learning-roadmap},
-  caption={One possible learning order, not a required sequence; Streaming is an optional branch rather than a required milestone.},
+  caption={One possible learning order, not a required sequence: six required milestones build the capstone and its evidence, then at most one specialization track is an optional branch.},
   source={Author's synthesis.},
-  description={A three-horizon roadmap. Beginner: SQL, Python, Ingestion basics. Core: Storage, Transformation, Orchestration, Quality. Advanced: Governance, Streaming (optional), Portfolio Project, Production Readiness. Every milestone is required except Streaming, which is marked optional in its own label.}
+  description={A left-to-right chain of six required milestones, each connected by a solid arrow: Foundation produces a written grain statement; Local pipeline produces a passing run\_all.py transcript; Reliable models produces a before/after row-count note; Operational control produces a failing-check transcript and diagnosis; Consumer contract produces a contract file for fct\_hourly\_ohlcv; Portfolio evidence produces a README, architecture diagram, test output, runbook entry, and design-decision record. A dashed, separately labeled edge distinct from the solid required chain branches from Portfolio evidence to a seventh, dashed-bordered node offering one optional specialization track, chosen from batch analytics, streaming, platform, reliability and quality, ML data, or finance and quant data; no single track is required and none is a prerequisite for the others.}
 ]
-\begin{reportroadmap}[mode=horizons]
-  \horizon{Beginner}{Foundations}{SQL, Python, Ingestion basics}
-  \horizon{Core}{The lifecycle}{Storage, Transformation, Orchestration, Quality}
-  \horizon{Advanced}{Scale and production}{Governance, Streaming (optional), Portfolio Project, Production Readiness}
-\end{reportroadmap}
+\begin{reportflow}[step spacing=3.05]
+  \step{found}{Foundation}
+  \step{localpipe}{Local pipeline}
+  \step{relmodels}{Reliable models}
+  \step{opcontrol}{Operational control}
+  \step{conscontract}{Consumer contract}
+  \step{evidence}{Portfolio evidence}
+  \flowedge{found}{localpipe}
+  \flowedge{localpipe}{relmodels}
+  \flowedge{relmodels}{opcontrol}
+  \flowedge{opcontrol}{conscontract}
+  \flowedge{conscontract}{evidence}
+  \stepat[draw=Muted,dashed]{specialize}{15.25}{-2.4}{Optional specialization (pick one)}
+  \RKEdge[optional branch]{optional}{evidence}{specialize}
+\end{reportflow}
 \end{diagram}

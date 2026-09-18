@@ -1,18 +1,21 @@
 \begin{diagram}[
-  type=cycle,
+  type=flow,
   label={fig:sec06-quality-loop},
-  caption={Data quality as a recurring loop: a contract sets the expectation, a test checks it, a failing test raises an alert that leads to a decision to block, warn, or quarantine the data, and remediation feeds back into the contract.},
+  caption={A failing test does not pass silently: Test branches to Publish only once checks pass, while a failure follows a dashed exception path to Alert and then to an explicit block, warn, or quarantine decision that revises the Contract for the next interval.},
   source={Author's synthesis.},
-  description={A four-stage cycle with no fixed start or end: Contract, Test, Alert, and Remediation, each stage leading to the next and Remediation looping back to Contract. The action tied to a failing test is a decision to block, warn, or quarantine the affected data, not merely a pass/fail result.}
+  description={A five-node flow with one branch point. Contract leads to Test. Test is the branch point: on pass, a solid edge leads to Publish, a terminal state; on fail, a dashed exception edge labeled fail leads to Alert. Alert leads by a dashed edge labeled quarantine to a Remediate or Quarantine decision, where the action is to block publication, warn the owner, or quarantine the affected data rather than a silent pass. A dashed edge then loops back from Remediate or Quarantine to Contract, closing the recurring cycle with no fixed start or end.}
 ]
-\begin{reportcycle}[stages=4]
-  \cyclestage{contract}{Contract}
-  \cyclestage{test}{Test}
-  \cyclestage{alert}{Alert}
-  \cyclestage{remediation}{Remediation}
-  \cycleedge{contract}{test}
-  \cycleedge{test}{alert}
-  \cycleedge{alert}{remediation}
-  \cycleedge{remediation}{contract}
-\end{reportcycle}
+% Main row is the solid data path (Contract -> Test -> Publish on pass).
+% The lower row is the dashed exception path (fail -> quarantine -> loop back),
+% positioned directly under Contract so the return edge stays clear of Test.
+\stepat[text width=24mm,align=center]{contract}{0}{0}{Contract}
+\stepat[text width=24mm,align=center]{test}{3.15}{0}{Test}
+\stepat[rk terminal,text width=24mm,align=center]{publish}{6.30}{0}{Publish}
+\stepat[text width=24mm,align=center]{alert}{3.15}{-2.2}{Alert}
+\stepat[text width=24mm,align=center]{remediate}{0}{-2.2}{Remediate or\\Quarantine}
+\flowedge{contract}{test}
+\flowedge{test}{publish}
+\RKEdge[fail]{optional}{test}{alert}
+\RKEdge[quarantine]{optional}{alert}{remediate}
+\RKEdge{optional}{remediate}{contract}
 \end{diagram}

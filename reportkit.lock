@@ -1,8 +1,8 @@
 {
   "pandoc": "pandoc 3.1.3",
-  "python": "3.12.3",
+  "python": "3.11.15",
   "reportkit_commit": "e1d55be784416fdfb89635dc407bdd80b4f85255",
-  "reportkit_ref": "v1.3.0-128-ge1d55be",
+  "reportkit_ref": "e1d55be",
   "schema_version": 2,
   "tex_engine": "pdflatex",
   "toolchain": {
@@ -72,25 +72,25 @@
     "fingerprint": "6e0fc8ea7889634d3c337eacc4e4f68adb10c2c968e2e7e683f5c24de07408e5",
     "resolved": {
       "apt_packages": {
-        "ca-certificates": "20260601~24.04.1",
+        "ca-certificates": "20240203",
         "fontconfig": "2.15.0-1.1ubuntu2",
         "git": "1:2.43.0-1ubuntu7.3",
         "pandoc": "3.1.3+ds-2",
         "python3": "3.12.3-0ubuntu2.1",
         "python3-pip": "24.0+dfsg-1ubuntu1.3",
         "python3-venv": null,
-        "texlive-bibtex-extra": null,
-        "texlive-fonts-recommended": null,
-        "texlive-latex-extra": null,
-        "texlive-luatex": null,
-        "texlive-science": null
+        "texlive-bibtex-extra": "2023.20240207-1",
+        "texlive-fonts-recommended": "2023.20240207-1",
+        "texlive-latex-extra": "2023.20240207-1",
+        "texlive-luatex": "2023.20240207-1",
+        "texlive-science": "2023.20240207-1"
       },
       "commands": {
-        "bibtex": "BibTeX 0.99d (TeX Live 2025)",
+        "bibtex": "BibTeX 0.99d (TeX Live 2023/Debian)",
         "git": "git version 2.43.0",
-        "lualatex": "This is LuaHBTeX, Version 1.22.0 (TeX Live 2025)",
+        "lualatex": "This is LuaHBTeX, Version 1.17.0 (TeX Live 2023/Debian)",
         "pandoc": "pandoc 3.1.3",
-        "pdflatex": "pdfTeX 3.141592653-2.6-1.40.28 (TeX Live 2025)"
+        "pdflatex": "pdfTeX 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian)"
       },
       "expected_fingerprint": "6e0fc8ea7889634d3c337eacc4e4f68adb10c2c968e2e7e683f5c24de07408e5",
       "fingerprint": null,
@@ -102,20 +102,20 @@
         "font_data/reportkit-libertinus-fonts.tar.gz": true,
         "toolchain/requirements.lock": true
       },
-      "python": "3.12.3",
+      "python": "3.11.15",
       "python_packages": {
         "PyMuPDF": null,
-        "jsonschema": "4.10.3",
-        "matplotlib": "3.10.8",
-        "numpy": "2.4.4",
-        "pandas": "3.0.2",
-        "pytest": "9.0.2"
+        "jsonschema": null,
+        "matplotlib": null,
+        "numpy": null,
+        "pandas": null,
+        "pytest": null
       },
       "renderer_dpi": 150,
       "runtime_fonts": {
         "Google Sans": null,
-        "libertinus.sty": "/home/iancwm/.TinyTeX/texmf-local/tex/latex/libertinus/libertinus.sty",
-        "libertinust1math.sty": "/home/iancwm/.TinyTeX/texmf-local/tex/latex/libertinust1math/libertinust1math.sty"
+        "libertinus.sty": "/usr/local/share/texmf/tex/latex/libertinus/libertinus.sty",
+        "libertinust1math.sty": "/usr/local/share/texmf/tex/latex/libertinust1math/libertinust1math.sty"
       },
       "status": "unavailable",
       "version_matches": {

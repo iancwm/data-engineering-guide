@@ -1,17 +1,20 @@
 \begin{diagram}[
   type=network,
   label={fig:sec07-lineage},
-  caption={Lineage traces responsibility from producer to consumer; the catalog documents the dataset for discovery and governance rather than sitting in the data's physical path, but a field change at the producer or dataset can still silently break any consumer relying on it.},
+  caption={Lineage tracks the dataset's physical or logical flow from producer to consumer, and the accountability for a change along that path; the catalog or steward documents the dataset for discovery and governance through a separate relationship rather than by sitting in the data's route, but a field change at the producer or dataset can still silently break any consumer relying on it.},
   source={Author's synthesis.},
-  description={A four-node reading-order chain: Producer, Dataset, Catalog or Steward, and Consumer. Consumer represents any of a dashboard, a feature or model, or an application -- the three are named in the surrounding text as examples of that final node. Catalog or Steward documents and governs the dataset for discovery; it does not receive or forward data itself. The chain shows who is upstream of whom and who is accountable for a change, not the dataset's physical transport path.}
+  description={A three-node flow chain drawn with solid arrows reads left to right: Producer, Dataset, and Consumer, showing the physical or logical path the data itself travels. Consumer represents any of a dashboard, a feature or model, or an application -- the three are named in the surrounding text as examples of that final node. A separate dashed arrow labeled documents connects Catalog or Steward to Dataset beneath the flow line, showing that the catalog records and governs the dataset for discovery rather than receiving or forwarding data itself. It is a governance and documentation relationship, not a fourth hop the data passes through, and its distinct dashed style marks that difference deliberately.}
 ]
-\begin{reportnetwork}
-  \networknode{producer}{Producer}
-  \networknode{dataset}{Dataset}
-  \networknode{catalog}{Catalog or Steward}
-  \networknode{consumer}{Consumer}
-  \networkedge[flow]{producer}{dataset}
-  \networkedge[flow]{dataset}{catalog}
-  \networkedge[flow]{catalog}{consumer}
-\end{reportnetwork}
+% reportnetwork's default grid would place all four nodes in one row, which
+% is the defect being fixed here: it makes the catalog look like a hop the
+% data physically passes through. Nodes are placed explicitly instead so the
+% flow path (solid, horizontal) and the governance overlay (dashed, offset
+% below) read as visually distinct relationships.
+\RKNode{producer}{0}{0}{Producer}
+\RKNode{dataset}{3.9}{0}{Dataset}
+\RKNode{consumer}{7.8}{0}{Consumer}
+\RKNode{catalog}{3.9}{-2.25}{Catalog or Steward}
+\flowedge{producer}{dataset}
+\flowedge{dataset}{consumer}
+\RKEdge[documents]{handoff}{catalog}{dataset}
 \end{diagram}

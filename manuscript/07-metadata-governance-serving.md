@@ -90,9 +90,17 @@ A practical contract may include:
 
 Contracts should be version-controlled and tested where possible. The goal is not bureaucracy. The goal is to make producer-consumer expectations explicit before production data breaks.
 
-The data-contract figure summarizes that boundary: producers declare what they provide, the contract makes expectations testable, and consumers can depend on the agreed behavior.
+The table below summarizes that boundary: producers declare what they provide, the contract makes expectations testable, and consumers can depend on the agreed behavior. Each row's example points to the matching field in the versioned contract listing that follows.
 
-[[REPORTKIT-VISUAL:fig:sec07-data-contract]]
+::: {#tbl:sec07-data-contract-boundary}
+Table: The data contract as a shared boundary between producer commitments and consumer expectations.
+
+| Side | What it states | Example field in `lst:sec07-data-contract` |
+| --- | --- | --- |
+| Producer commits | Schema, grain, and ownership | `owner`, `grain`, `fields` |
+| Contract enforces | Freshness, quality, and compatibility rules | `freshness`, `quality`, `compatibility` |
+| Consumer can depend on | A stable, testable shape and a defined change process | `change_policy` |
+:::
 
 **Illustrative.** This versioned contract makes the producer's promise
 testable without tying the guide to one schema registry. It names the grain,
@@ -205,3 +213,33 @@ semantics.
 treating a schema as if it defines business meaning, granting raw-layer access
 by default, and changing a contract without a compatibility window all shift
 risk to downstream consumers without making it visible.
+
+::: practice
+**Practice: is this schema change backward-compatible?**
+
+The `curated_trades` contract (`lst:sec07-data-contract`) declares
+`compatibility: backward-compatible additions only`. A producer proposes two
+simultaneous changes: renaming `quantity` to `base_quantity`, and changing its
+unit from BTC to satoshis. A downstream dashboard built on `fct_hourly_ohlcv`
+sums that column into an hourly traded-volume tile.
+
+1. Under the contract's stated compatibility rule, is this change
+   backward-compatible? Why or why not?
+2. If it ships without a version bump or producer notice, what does the
+   dashboard's traded-volume tile show -- and would the error be obviously
+   wrong, or silently "plausible but wrong"?
+3. Name the two mechanics in `change_policy` (from `lst:sec07-data-contract`)
+   that would need to happen before this change could ship safely.
+:::
+
+## Further Learning
+
+These sources go deeper on specific claims made in this section and are
+separate from the Section 11 bibliography, which covers the guide's core
+texts.
+
+- DataHub Project. [DataHub's catalog and metadata documentation](https://datahubproject.io/docs/) describes how a catalog stays integrated with pipelines and lineage instead of becoming the stale documentation this section warns against. Accessed 18 September 2026.
+- OpenLineage. [OpenLineage's lineage event and facet specification](https://openlineage.io/docs/) documents how the column-, table-, and job-level lineage described in this section is captured and shared across tools in practice. Accessed 18 September 2026.
+- OpenMetadata. [OpenMetadata's discovery, lineage, and governance documentation](https://docs.open-metadata.org/) shows an open-source implementation of the catalog, lineage, and classification concerns this section describes together. Accessed 18 September 2026.
+- Databricks. [Unity Catalog's access-control documentation](https://docs.databricks.com/en/data-governance/unity-catalog/index.html) details the row-level and column-level security controls named under Access, Classification, and Retention. Accessed 18 September 2026.
+- DAMA International. [*DAMA-DMBOK: Data Management Body of Knowledge*](https://www.dama.org/cpages/body-of-knowledge). 2nd ed. Technics Publications, 2017.

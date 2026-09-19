@@ -218,6 +218,21 @@ engine-level findings surfaced while getting this revision's own build
 green (Issues 4-7 below) -- none block content or visual work; all are
 deferred upstream per the repository-boundary convention.
 
+### P3 -- Reduce Section 8 reader friction
+
+**Files:** `manuscript/08-practitioner-topics.md`.
+**Commit:** this changeset.
+
+Added a compact implement-now / explain / defer callout, one connecting
+failure scenario with callbacks for observability, cost, security, ownership,
+contracts, and tool selection, and a transition into Section 9. Condensed the
+Section 7 contract synthesis, cost-driver prose, and stack-selection guidance;
+removed repeated vendor enumeration and the redundant standalone revenue
+dashboard walkthrough. Preserved the security and platform-boundary figures,
+architecture and learning-order tables, minimum viable stack, production
+readiness checklist, and the Section 8 practice checkpoint. The revised source
+is 3,249 words versus 3,508 before the edit.
+
 ## Build and QA
 
 **Toolchain setup performed in this session** (none of this touches
@@ -262,6 +277,23 @@ listing), no Unicode replacement characters. One genuine, pre-existing
 font-encoding finding surfaced (inline-code "→" glyphs losing their
 ToUnicode mapping on extraction) -- recorded as Issue 7, not fixed in this
 pass (see deferred-issues list).
+
+### Section 8 reader-friction follow-up
+
+The publication validation passed with 12 manuscripts, 21 visuals, and 21
+labels. Two consecutive clean `--profile release` combined builds passed with
+`status: passed`, `gate: passed`, 81 pages, and zero blocking diagnostics;
+each retained the same 24 warning-only diagnostics already present in the
+toolchain baseline. The release PDF is at
+`build/combined/data-engineering-guide.pdf`.
+
+Rendered pages 66–75 at 200 DPI in grayscale on the A4 PDF canvas
+(595.276 x 841.890 points): page 66 is the Section 7 buffer, pages 67–74 are
+Section 8, and page 75 begins Section 9. Reviewed those pages for overflow,
+stranded headings, awkward whitespace, figure/table displacement, and
+grayscale legibility. No new layout defect was found; the learning-order table
+continues with its header intact, both Section 8 figures remain legible, and
+the Section 9 transition lands cleanly before the new section.
 
 ## Deliverables checklist
 

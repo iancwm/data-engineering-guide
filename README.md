@@ -21,10 +21,17 @@ fragments/                 22 LaTeX diagram fragments, one per
                             [[REPORTKIT-VISUAL:fig:<slug>]] sentinel in the manuscript
 publication.yaml           title, author, and other publication identity
 publication-guidelines.md  editorial spec for this specific guide
+companion/                 runnable examples, including optional finance labs
 build/, output/            gitignored -- created by a build, never hand-edited
 reportkit.lock             written by a successful build; pins the ReportKit
                             ref/commit and toolchain versions used
 ```
+
+The [companion README](companion/README.md#optional-finance-research-labs)
+has the finance lab commands. The [finance overlay spec](docs/finance-overlay-spec.md),
+[implementation plan](docs/superpowers/plans/2026-09-26-finance-overlay.md),
+and [implementation log](docs/finance-overlay-implementation-log.md) record its
+scope and verification.
 
 ## Building
 

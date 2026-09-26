@@ -32,6 +32,26 @@ Quality is contextual. A dataset can be good enough for exploratory analysis but
 
 For market, pricing, or fundamental datasets, these dimensions become concrete. A price table may need tests for missing securities, stale values, negative prices, duplicated vendor records, invalid currency codes, suspicious day-over-day moves, and reconciliation against source delivery counts. The exact tests should follow the use case, not a generic checklist.
 
+## Market-Data Checks in the Optional Finance Lab
+
+The existing BTCUSDT companion checks a bounded trade-only fixture. It can
+check positive prices and quantities, duplicate trade keys, received-versus-
+accepted counts, and hourly reconciliation. The optional finance fixtures add
+checks for selected revisions being available by each decision, unique
+point-in-time joins, positive synthetic raw closes, expected session rows,
+revision counts, expected delivered-record counts, and sequence gaps and
+duplicates within each declared feed, channel, and session. A production
+source-count limit is meaningful only when its source contract defines the
+count and interval being compared. These checks validate the teaching data
+and its query; they do not establish that a real market source is complete or
+authoritative.
+
+Stale or crossed quote checks need bid and ask records with explicit event and
+availability times. Those records are not in these labs, so the checks belong
+in a quote-data contract and must not be implied by a passing trade or price
+fixture. A sequence gap should block or mark the affected output incomplete
+until a feed-specific recovery decision has supplied the missing state.
+
 The quality-loop figure shows this as a branch, not a straight pipeline. A contract sets the expectation and a test checks it; a passing test moves straight to publication. A failing test follows a separate, visually distinct exception path to an alert, and the alert forces an explicit decision to block, warn, or quarantine the affected data rather than a silent pass. That decision is what feeds back into the contract, so the next interval is checked against the same or a revised expectation instead of starting from nothing.
 
 [[REPORTKIT-VISUAL:fig:sec06-quality-loop]]

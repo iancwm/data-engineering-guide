@@ -234,6 +234,99 @@ Table: Slowly changing dimension types.
 
 Type 2 dimensions are powerful because they allow point-in-time joins. A fact can join to the dimension row that was valid when the event occurred. This is critical when historical meaning matters, but it adds complexity to keys, joins, and tests.
 
+Business validity is only one clock. A row may describe an interval that was
+already in effect but arrive as a correction later; a historical decision
+must first limit candidate versions to those available by its decision time,
+then use the interval from the version visible at that time. A current Type 2
+table whose old interval was retroactively shortened cannot answer that
+question on validity dates alone.
+
+## Optional Finance Example: Point-in-Time Selection
+
+The optional finance route applies that rule to one synthetic fundamental
+observation for `EQ1`, with `period_end=2025-12-31`. Revision `F1` has value
+100 and `available_at=2026-01-06T14:00:00Z`; later revision `F2` corrects it
+to 95 at `2026-01-10T14:00:00Z`. Decision `D1` at
+`2026-01-07T21:05:00Z` can select only F1, while `D2` at
+`2026-01-13T21:05:00Z` can select F2. The decisions use the inclusive rule
+`available_at <= decision_at`; tied eligible revisions use the greatest
+`revision_id` in lexical order. Today's latest value alone would incorrectly
+replace D1's historical answer with F2.
+The lab's explicit session calendar uses `America/New_York`; both decisions
+occur five minutes after the corresponding 16:00 local close.
+
+The timeline separates the reporting period from the later availability of
+each revision and the two decision times.
+
+[[REPORTKIT-VISUAL:fig:sec04-pit-revision-timeline]]
+
+**Runnable with adaptation.** The finance lab loads the synthetic JSONL
+fixture into a typed DuckDB table named `fixture` and sets the session
+timezone to UTC. This focused query preserves every decision row, including a
+decision with no eligible observation, and selects the latest available
+period and revision with the lab's deterministic tie-breaker.
+
+::: {#lst:sec04-pit-selection}
+Listing: Fundamental revision visible at each decision.
+
+```sql
+WITH decisions AS (
+    SELECT decision_id, instrument_id, decision_at,
+           CAST(decision_at AS DATE) AS decision_date
+    FROM fixture
+    WHERE kind = 'decision'
+)
+SELECT d.decision_id,
+       f.record_id,
+       f.revision_id,
+       f.period_end,
+       f.available_at,
+       f.value
+FROM decisions d
+LEFT JOIN LATERAL (
+    SELECT f.record_id,
+           f.revision_id,
+           f.period_end,
+           f.available_at,
+           f.value
+    FROM fixture f
+    WHERE f.kind = 'fundamental'
+      AND f.instrument_id = d.instrument_id
+      AND f.period_end <= d.decision_date
+      AND f.available_at <= d.decision_at
+    ORDER BY f.period_end DESC,
+             f.available_at DESC,
+             f.revision_id DESC
+    LIMIT 1
+) f ON TRUE
+ORDER BY d.decision_at, d.decision_id;
+```
+:::
+
+The selection matches the lab's `RESULT_SQL`: for fundamentals it first
+limits rows to the decision's instrument, eligible reporting periods, and
+`available_at <= decision_at`, then orders by period, availability, and
+revision identifier. The full lab also requires reference versions to be
+available at the decision, then applies the appropriate business-valid
+interval rule to symbol mappings and membership and records selected
+revision IDs. D1's result is F1 = 100, symbol `AAA`, universe `EQ1, EQ2`;
+D2's is F2 = 95, symbol `AAB`, universe `EQ1`. The deliberately wrong
+current-value comparison assigns F2 = 95 to D1.
+
+For the same case, a feature window ends at or before its decision and may
+use only rows available by that time. A label window starts strictly after
+the decision and is kept for evaluation, never joined into the decision's
+features. It follows the next open synthetic session; the closed 2026-01-11
+date is not a label session. Raw closes remain unchanged. The split was
+available on 2026-01-08 and effective on 2026-01-09, so D1 cannot use its
+factor. For a D2 comparison stated in post-split share units, this example
+multiplies a pre-split raw close by 0.5. That is a stated split convention,
+not a total-return adjustment; dividends would require separate cash-flow
+and reinvestment assumptions. In the lab, D1's feature is raw close 100 on
+`S20260107` and its next-open label is 102 on `S20260108`; D2's feature is 55
+on `S20260113` and its next-open label is 56 on `S20260114`. D2's split
+comparison is the January 8 raw close, 102 × 0.5 = 51 post-split units.
+
 ## Transformation Tooling Landscape
 
 Different tools fit different transformation workloads. The transformation-tooling table groups them by execution model and highlights the failure mode to watch.
@@ -422,7 +515,14 @@ GROUP BY 1, 2, 3;
 
 The interval uses an inclusive lower bound and exclusive upper bound, both in UTC. The exact SQL varies by engine. Some warehouses use different ordered aggregate functions for open and close prices. When multiple trades have the same event timestamp, use `source_trade_id` as a deterministic tie-breaker. The important point is conceptual: the model declares its grain, aggregates from a lower grain to a higher grain, and can be tested.
 
-Look-ahead bias is the mirror image of the late-data problem above: a backtest or feature pipeline that recomputes `fct_hourly_ohlcv` from today's fully-corrected `fct_trades` and then joins it back onto a past decision point is using information (a late correction, a redelivered trade) that was not actually available at that point in time. Point-in-time correctness means reconstructing the bar exactly as `is_final` would have reported it at the time, not as it reads after every late arrival has since settled -- keep the finalized-vs-still-open distinction (`is_final`) in any table a backtest reads from, rather than serving only the latest value per hour.
+`fct_hourly_ohlcv` remains a current analytical view rebuilt from the
+currently deduplicated trades. Its `is_final` value says that an hour has
+passed this pipeline's allowed-lateness boundary in that current build; it
+does not preserve the bar value or constituent revisions visible at an
+earlier decision. A historical replay must query versioned inputs using the
+decision's availability boundary and the bar definition then in force.
+Keeping `is_final` on today's table does not make that table a historical
+snapshot.
 
 This project teaches:
 
@@ -496,5 +596,6 @@ Transformation is successful when the output is not only technically valid, but 
 - **[About incremental models](https://docs.getdbt.com/docs/build/incremental-models)**, dbt Labs official documentation (accessed 2026-09-18). Goes deeper on the `is_incremental()` pattern and lookback-window strategies used in `lst:sec04-deduplicate-trades`.
 - **[The `ref()` function](https://docs.getdbt.com/reference/dbt-jinja-functions/ref)**, dbt Labs official documentation (accessed 2026-09-18). Explains how `ref()` builds the model dependency DAG referenced throughout this section's dbt discussion.
 - **[Aggregate Functions](https://duckdb.org/docs/sql/functions/aggregates)**, DuckDB official documentation (accessed 2026-09-18). Documents `arg_min`/`arg_max` and the other ordered aggregates used to compute open and close prices in the hourly OHLCV listing.
+- **[FROM and JOIN clauses](https://duckdb.org/docs/stable/sql/query_syntax/from)**, DuckDB official documentation (accessed 2026-09-26). Documents `LATERAL` joins, the correlated selection form used in `lst:sec04-pit-selection`, and the separate predicate rules for `ASOF` joins.
 - Ralph Kimball and Margy Ross, *The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling*, 3rd edition (Wiley, 2013). The standard reference for star schemas, surrogate keys, and the slowly changing dimension types introduced in this section.
 - **[Window Functions](https://www.postgresql.org/docs/current/tutorial-window.html)**, PostgreSQL official documentation (accessed 2026-09-18). A durable, standards-based introduction to the `ROW_NUMBER() OVER (PARTITION BY ...)` pattern this section's deduplication listing relies on.

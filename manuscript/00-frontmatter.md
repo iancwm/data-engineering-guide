@@ -40,17 +40,18 @@ This linked roadmap is a reading aid for the Markdown manuscript; the generated 
 
 ## Reader Routes and a Guided Quick Start
 
-This guide can be read three ways. Pick the route that matches what you need
+This guide can be read in four ways. Pick the route that matches what you need
 right now; you can switch routes at any point.
 
 ::: {#tbl:reader-routes}
-Table: Three routes through this guide.
+Table: Four routes through this guide.
 
 | Reader mode | Route |
 | --- | --- |
 | Learn the field | Read linearly from Section 1. |
 | Build while learning | Run the companion quick start below now, then return to it at each section's capstone continuation. |
 | Use as a reference | Jump through the contents above, the glossary (Section 10), and each section's design checklist. |
+| Explore finance data engineering | Follow the optional notes in Sections 2-9 and run the synthetic, offline labs in `companion/finance/`. |
 :::
 
 Before the lifecycle survey in Section 1, consider running the guide's own

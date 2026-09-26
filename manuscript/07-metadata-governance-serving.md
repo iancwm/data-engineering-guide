@@ -140,6 +140,34 @@ change_policy:
 The contract does not replace quality checks. It gives those checks, the
 producer, and the consumer a shared place to state what should be true.
 
+An optional research input has a different contract from `curated_trades`.
+The following compact example makes its clocks and correction rule explicit;
+it does not change the BTCUSDT table's meaning or promise that today's table
+can reproduce an earlier view.
+
+::: {#tbl:sec07-pit-contract}
+Table: Point-in-time research input contract fields.
+
+| Contract field | Meaning in this example |
+| --- | --- |
+| `owner` | Research-data engineering owns schema, clock definitions, and correction handling. |
+| `grain` | One immutable input row per `record_id`; a `kind`-specific logical key identifies the observation or reference-data object. |
+| `event_at` | Source event time for a price or feed record. |
+| `received_at` | Time this pipeline durably received the source record. |
+| Clock source | `event_at` comes from the source record; `received_at` comes from the UTC ingestion gateway; `available_at` is the UTC commit time when the validated revision becomes queryable. |
+| `available_at` | First time the validated revision is exposed to research queries; the query uses `available_at <= decision_at`. |
+| `effective_from` / `effective_to` | Business-valid interval for a mapping or membership row, as visible in that revision. |
+| `period_end` | Fundamental observation period; it is not its publication or availability time. |
+| Availability target | Validate and expose a received record within 10 minutes of `received_at`; report misses against this target. |
+| Correction policy | Append a new `revision_id`; retain prior versions and their availability times for replay. |
+:::
+
+This contract example describes a small educational pipeline. A production
+contract would also name the actual source and clock evidence, retention and
+access controls, failure ownership, and the recovery policy appropriate to
+that source. A freshness target alone does not prove public release time or
+historical completeness.
+
 ## Access, Classification, and Retention
 
 Governance also includes protecting sensitive data. Data may include personal information, payment details, health records, credentials, confidential business information, or regulated investment data.

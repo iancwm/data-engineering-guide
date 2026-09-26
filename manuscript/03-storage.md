@@ -176,6 +176,42 @@ needs deterministic deduplication and quality checks.
 
 It is also important not to overstate idempotency. Delta, Iceberg, and Hudi provide transactional table commits, but they do not automatically know that two rows represent the same business event. Deduplication still requires stable keys, merge logic, constraints, or explicit data quality checks.
 
+## Revisions and Historical Reference Data
+
+A table snapshot can show which rows a storage system had committed, but it
+does not by itself say when an upstream source published each value or when a
+particular pipeline could use it. For historical research, preserve source
+revisions as append-only records instead of overwriting the earlier value.
+Each record needs a logical observation key, a stable revision identifier,
+its business period or effective interval, and explicit source-event,
+receipt, and pipeline-availability clocks. This lets a decision-time query
+filter to versions available then before it chooses among revisions.
+
+The synthetic fixture declares a grain for every row: for example, one
+fundamental row is one revision of one instrument and reporting-period
+observation; one symbol-mapping row is one instrument-symbol interval; and
+one membership row is one version of an instrument's membership interval.
+For a fundamental, `period_end` says which reporting period the observation
+describes. It is not its publication or availability timestamp.
+
+Reference data needs the same history. A stable `instrument_id` identifies
+the instrument while its displayed `symbol` changes; join through that ID and
+select the symbol mapping whose half-open `[effective_from, effective_to)`
+interval and availability fit the decision. Ticker text is never the join
+key. Universe membership is also historical data: preserve the earlier
+membership record when a later event ends membership or corrects its interval.
+The effective date answers when the business state applies; `available_at`
+answers when that version was usable. A later correction can change today's
+view without changing what an earlier decision could have selected. Type 2
+validity dates describe business time, but do not alone establish when a
+revision became available to a historical decision.
+
+The invented EQ1 mapping keeps one stable instrument while its displayed
+symbol changes from `AAA` to `AAB`, effective 2026-01-09. The EQ2 membership
+history retains its earlier interval when a version available later ends
+membership effective 2026-01-12. These rows teach the join contract; they are
+not a vendor-quality historical universe.
+
 ## File Formats
 
 File format affects performance, schema handling, and interoperability. The file-format table summarizes the practical trade-offs among common interchange and analytical formats.

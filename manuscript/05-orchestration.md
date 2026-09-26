@@ -194,6 +194,22 @@ Run a small interval first. Then choose bounded parallelism rather than launchin
 
 Backfills should not be treated as a special manual script that has different correctness rules. A reliable daily run and a reliable historical run are the same operation applied to different data intervals.
 
+## Point-in-Time Research Replay
+
+A historical research replay needs a simulated decision clock. For each
+decision, query the versioned inputs whose `available_at` is at or before that
+decision, then apply the visible reference-data interval and observation
+period. Do not rebuild the replay from today's corrected rows and infer what
+was known from their current values. The decision timestamp is a run
+parameter; the machine clock does not determine the historical answer.
+
+Record enough evidence to reproduce the selection: fixture or source version,
+code or query version, decision times, parameters, selected revision IDs, and
+an output hash. The optional finance lab under `companion/finance/` emits a
+small deterministic manifest over synthetic inputs. It demonstrates replay
+evidence and point-in-time selection; it is not a trading simulator or a
+production audit system.
+
 ## Concurrency and Resource Controls
 
 Concurrency determines how much work may run at the same time. More parallelism can reduce latency, but it can also exhaust worker capacity, exceed API or database limits, create lock contention, and make failures harder to recover from.

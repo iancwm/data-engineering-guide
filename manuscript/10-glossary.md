@@ -4,6 +4,8 @@
 
 **Asset**: A named data product, such as a table, partition, file set, or feature dataset, whose updates can trigger dependent work.
 
+**Availability time**: The earliest time a validated value could be used by a specified pipeline or research process.
+
 **Backfill**: Rerunning a pipeline for historical periods.
 
 **Backpressure**: A flow-control response that slows or buffers producers when downstream systems cannot keep up.
@@ -58,7 +60,11 @@
 
 **Partitioning**: Organizing data into subsets, often by date or another key, so that reads and maintenance can be scoped.
 
+**Point-in-time query**: A query that selects only versions available by a stated decision time and then applies the business-valid or observation-period rule visible at that time.
+
 **Quarantine**: An isolated location for malformed or suspect records kept for investigation or later correction.
+
+**Revision**: A retained version of a logical observation, with its own identity and availability time.
 
 **Schema drift**: Changes in source data structure over time.
 

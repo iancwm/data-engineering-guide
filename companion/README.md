@@ -65,6 +65,25 @@ Expect a final `PASSED` line and exit code 0. `output/` (the Parquet files
 and `curated.duckdb`) is regenerated from scratch on every run and is
 git-ignored, like `.venv/`.
 
+## Optional finance research labs
+
+The separate `finance/` path adds two small, offline exercises without
+changing this BTCUSDT pipeline or its 49 raw / 48 deduplicated / 3 hourly-bar
+result. See [`finance/README.md`](finance/README.md) for fixture grains,
+clock assumptions, complete output examples, and lab limitations.
+
+Run both scripts and their focused tests from the repository root:
+
+```bash
+companion/.venv/bin/python companion/finance/scripts/run_pit_case.py
+companion/.venv/bin/python companion/finance/scripts/check_feed_sequence.py
+companion/.venv/bin/python -m unittest discover -s companion/finance/tests -v
+```
+
+The PIT lab uses DuckDB from the same pinned `companion/.venv` environment;
+the feed-sequence checker uses only the Python standard library. Both use
+local synthetic fixtures and require no credentials or network access.
+
 ## Build-inertness
 
 Nothing under `companion/` is referenced by `publication.yaml`,

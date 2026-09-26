@@ -176,6 +176,60 @@ still revise that window or must be quarantined for reconciliation.
 
 [[REPORTKIT-VISUAL:fig:sec02-event-time-watermark]]
 
+Market-data research needs more than the event and receipt clocks. A source
+may publish or correct a value before a particular pipeline receives it, so
+the earliest time that pipeline could use the value is a separate fact. Keep
+these clocks alongside the business date or interval the value describes:
+`event_at` records when the exchange event or source announcement occurred;
+`received_at` records when this pipeline received the row; `available_at`
+records when the chosen source and this pipeline could first use that version;
+and `period_end` or `effective_from`/`effective_to` describes the reporting
+period or business-valid interval.
+
+The synthetic finance fixture writes each clock explicitly. It treats
+`available_at` as a conservative pipeline-usable time; it does not infer
+public release or local knowledge from file order, the current time, or
+`received_at`. At decision time `t`, the example allows a version when
+`available_at <= t`, including an exact timestamp match. A period end such as
+`2025-12-31` describes the observation; it does not say when the observation
+became knowable.
+
+Sequence numbers have a similar scope requirement. Record the sequence
+domain before comparing numbers; this exercise tracks each
+`(feed, channel, session)` independently and counts logical messages, not
+network packets or transmissions. A later number exposes a gap and leaves
+that affected output incomplete while it is buffered. An exact duplicate is
+not another missing message, and state must not leak into a different channel
+or session.
+
+Recovery depends on the feed protocol and its sequence semantics. For
+example, [Nasdaq MoldUDP64](https://nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/moldudp64.pdf)
+specifies retransmission requests, while the [NYSE XDP Options Client
+Specification](https://www.nyse.com/publicdocs/nyse/data/XDP_Options_Client_Specification_v1.4a.pdf)
+describes refresh functionality. The local `SIM` exercise instead supplies a
+synthetic repair record with a stable logical message identity, then releases
+contiguous buffered messages. That deterministic choice explains this
+fixture only; it is not a universal recovery algorithm.
+
+::: {#tbl:finance-sequence-recovery}
+Table: Sequence gap and local repair in the synthetic `SIM` feed.
+
+| Input | Expected before input | Result |
+| --- | ---: | --- |
+| Sequence 10, data | 10 | Applied; complete through 10. |
+| Sequence 11, data | 11 | Applied; complete through 11. |
+| Sequence 13, data | 12 | Buffered behind the gap; incomplete. |
+| Sequence 13, duplicate | 12 | Duplicate ignored; still incomplete. |
+| Sequence 12, repair | 12 | Repair fills the gap; release 12 and 13; complete, next expected 14. |
+:::
+
+In the fixture, `repair_of` names the logical message
+`SIM/A/2026-01-07/12`; the repair has its own unique `message_id`. The checker
+walks explicit `arrival_index` receive order, while `received_at` records the
+UTC receipt clock. Channel B and the next session keep independent sequence
+state and remain complete. This small trace shows gap detection and one
+declared recovery policy, not an exchange-protocol implementation.
+
 ## Ingestion Tooling Landscape
 
 The ingestion-tooling table groups choices by responsibility rather than vendor name.
@@ -402,3 +456,5 @@ An ingestion pipeline is production-ready when it can fail, retry, replay, and e
 - Apache Kafka documentation, ["Producer Configs"](https://kafka.apache.org/documentation/#producerconfigs), *Apache Kafka documentation*. Accessed 18 September 2026. Documents the idempotent-producer setting referenced in the Idempotency section's discussion of safe retries.
 - Debezium documentation, ["Debezium Architecture"](https://debezium.io/documentation/reference/stable/architecture.html), *Debezium documentation*. Accessed 18 September 2026. Explains how a CDC connector reads a database's transaction log, the mechanism behind the Change Data Capture section above.
 - Binance Spot API documentation, ["Trade Streams"](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams), *Binance API documentation*. Accessed 18 September 2026. The authoritative field reference for the `btcusdt@trade` payload the capstone producer normalizes; check it before adapting the producer skeleton, since exchange payloads can change.
+- Nasdaq, ["MoldUDP64 Protocol Specification"](https://nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/moldudp64.pdf), *Nasdaq Trader*. Accessed 26 September 2026. Specifies retransmission requests as one feed-specific response to missed packets; it is not the recovery policy implemented by the synthetic `SIM` fixture.
+- NYSE, ["XDP Options Client Specification v1.4a"](https://www.nyse.com/publicdocs/nyse/data/XDP_Options_Client_Specification_v1.4a.pdf), *NYSE*. Accessed 26 September 2026. Describes refresh functionality as another feed-specific recovery mechanism; it is not called by the synthetic fixture.

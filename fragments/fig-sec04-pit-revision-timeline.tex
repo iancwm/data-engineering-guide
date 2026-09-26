@@ -1,0 +1,17 @@
+\begin{diagram}[
+  type=timeline,
+  label={fig:sec04-pit-revision-timeline},
+  caption={F1 (100), available on 2026-01-06, is visible at D1 on 2026-01-07; correction F2 (95), available on 2026-01-10, is visible at D2 on 2026-01-13. Both describe period end 2025-12-31.},
+  source={Author's synthesis.},
+  description={Three aligned tracks separate reporting time, availability time, and decision time. The reporting track marks period_end 2025-12-31. On the availability track, F1 with value 100 is available on 2026-01-06 at 14:00 UTC and the correction F2 with value 95 is available on 2026-01-10 at 14:00 UTC. On the decision track, D1 at 2026-01-07 21:05 UTC is connected to F1, and D2 at 2026-01-13 21:05 UTC is connected to F2. The reporting period does not stand in for either availability timestamp.}
+]
+\begin{reporttimeline}[tracks={Reporting period,Available revisions,Decision times},span=12.0,track gap=1.65]
+  \event{Reporting period}{0.12}{period end}
+  \event{Available revisions}{0.32}{F1 = 100}
+  \event{Decision times}{0.40}{D1: F1}
+  \event{Available revisions}{0.65}{F2 = 95}
+  \event{Decision times}{0.94}{D2: F2}
+  \skewarrow{Available revisions}{0.32}{Decision times}{0.40}
+  \skewarrow{Available revisions}{0.65}{Decision times}{0.94}
+\end{reporttimeline}
+\end{diagram}

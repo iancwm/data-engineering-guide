@@ -104,6 +104,20 @@ Table: Data architecture patterns and trade-offs.
 
 Choose a pattern only after stating the workload, failure model, ownership model, and expected change. A straightforward batch pipeline is often a better starting point than a dual-path architecture. A streaming architecture is justified by a real latency or event-replay requirement, not by the presence of a message broker in a diagram.
 
+The table compares the operating shape of three research workloads. The
+freshness labels are contract choices, not measured guarantees; a real system
+must measure its own availability, recovery, and replay cost.
+
+::: {#tbl:research-replay-tradeoffs}
+Table: Research freshness, replay cost, and operating latency.
+
+| Workload | Freshness contract | Replay cost | Operating latency and evidence |
+| --- | --- | --- | --- |
+| Decision-time research replay | Use only revisions available at each fixed decision time. | Recompute the bounded interval from retained versions; cost grows with replay scope and retained inputs. | Scheduled batch is acceptable when declared; record input revisions, code, parameters, and output hash. |
+| Current corrected research view | Publish the latest validated corrections on an agreed schedule. | Incremental refresh is cheaper for routine use, but corrections may require restating affected outputs. | Measure source-to-query freshness and correction delay; expose the refresh time and quality state. |
+| Low-latency market-data service | Meet a source-specific availability and recovery target. | Retain replayable messages and recovery state; measure storage and reprocessing cost. | Set and measure end-to-end latency and gap-recovery objectives for the feed; this table makes no execution or alpha claim. |
+:::
+
 In the connecting scenario, this means asking whether the architecture can explain the stale output, cost, access, and ownership boundaries before adding another platform to the diagram.
 
 ## Practitioner Discussion: Data Contracts

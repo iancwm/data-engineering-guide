@@ -394,6 +394,7 @@ fig:sec01-lifecycle
 fig:sec02-delivery-semantics
 fig:sec03-lakehouse-layers
 fig:sec04-grain-change
+fig:sec04-pit-revision-timeline
 fig:sec05-orchestration-dag
 fig:sec06-quality-loop
 fig:sec07-lineage

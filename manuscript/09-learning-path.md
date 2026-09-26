@@ -104,18 +104,20 @@ The tree is a thinking aid, not a required framework layout. Secrets belong in t
 
 ## Milestone 7: Optional Specialization
 
-Milestone 6 already produces a job-ready, generalist portfolio project. Milestone 7 is one optional deep dive, chosen from the six tracks below — not a checklist to complete. The project also naturally bridges to three kinds of consumers: an analytics consumer who queries the documented hourly mart, an ML consumer who builds point-in-time features from the trade facts, and a finance or quant consumer who needs a reproducible UTC interval with source identifiers and correction history. Three of the six tracks below correspond directly to those three consumers; pick at most one.
+Milestone 6 already produces a job-ready, generalist portfolio project. Milestone 7 is one optional deep dive, chosen from the six tracks below; it is not a checklist to complete. Pick at most one track. The finance route is optional and uses the small offline extension under `companion/finance/`; it does not replace the generalist path or change the existing BTCUSDT capstone.
 
 - **Batch analytics.** Deepen dbt-style modeling and BI serving: add a rolling-window feature to `fct_hourly_ohlcv` and a small dashboard on top of it.
 - **Streaming.** Replace the fixture read with a real broker, such as a local Kafka or Redpanda instance, and rebuild `fct_trades` as a continuously updated model; ties to Section 2's delivery-semantics material.
 - **Platform.** Containerize the companion path, run the Section 5 DAG shape against a real orchestrator (Airflow or Dagster) with real schedules and retries, and replace local Parquet with object storage.
 - **Reliability and quality.** Build out full reconciliation across source, raw, curated, and aggregate counts (Section 6), wire the checks into an alerting table such as `quality_alerts`, and add a replay mechanism to the quarantine path.
 - **ML data.** Build a point-in-time feature table from `fct_trades` for a simple model, such as predicting next-hour volatility, taking care to avoid label leakage from the future.
-- **Finance or quant data.** Reproduce one UTC interval exactly from `fct_hourly_ohlcv`, including source identifiers, correction history, and the quality evidence a trading desk would require before trusting a bar.
+- **Finance or quant data.** Run the synthetic point-in-time and feed-sequence labs documented in `companion/finance/README.md`. Reconstruct two historical decisions from versioned inputs, inspect selected revision IDs, and trace a scoped feed gap through recovery. Today's current-view BTCUSDT table does not retain correction history by itself, so it cannot prove what was available at a past decision.
 
-**Artifact.** One additional deliverable specific to the chosen track: a streaming demo, a running orchestrator UI, a reconciliation dashboard with alerting, a feature table, or a reproduced-interval report.
+**Artifact.** One additional deliverable specific to the chosen track: a streaming demo, a running orchestrator UI, a reconciliation dashboard with alerting, a feature table, or the finance labs' decision table, manifest, and gap/recovery trace.
 
-**Interview question.** "Why did you go deeper on this track instead of the others, and what trade-off did you learn about that the generalist path wouldn't have taught you?"
+**Break it.** In the PIT lab, replace the decision-time query with the deliberately wrong latest-value query and check that D1 now sees a correction unavailable at its decision time. In the feed lab, omit the repair record and confirm the affected channel remains incomplete.
+
+**Interview question.** "What input versions, availability times, and code evidence would you need to reproduce a historical research decision, and what cannot be proved by today's latest-value table alone?"
 
 ## Further Learning {#sec09-further-learning}
 

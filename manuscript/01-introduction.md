@@ -22,6 +22,12 @@ This guide is written for beginners and intermediate practitioners comfortable w
 
 You do not need to memorize every product named here -- learn the responsibility a tool fulfils first, then one representative implementation. The aim is not an enterprise platform in one project, but understanding trade-offs well enough to scale a design as volume, freshness, or compliance needs change.
 
+An optional finance route threads through Sections 2-9 for readers interested
+in historical market data and quantitative research inputs. It uses small,
+invented equity, fundamentals, and feed examples to teach availability,
+correction history, and replay; it is an exercise in data engineering, not a
+trading simulator or a claim about investment results.
+
 By the end of this introduction, you should be able to:
 
 - explain how data moves from source to consumer, and where failures or ambiguity enter;
